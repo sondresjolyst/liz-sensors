@@ -76,15 +76,6 @@ void setup() {
     dht.begin();
     server.on("/", webpage_status);
     server.begin();
-
-    if (!MDNS.begin("esp8266")) {
-      Serial.println("Error setting up MDNS responder!");
-      while (1) {
-        delay(1000);
-      }
-    }
-    Serial.println("mDNS responder started");
-    MDNS.addService("http", "tcp", 80);
   } else {
     setupAP();
   }
@@ -104,26 +95,6 @@ void loop() {
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   readAndWriteDHT();
-
-  Serial.println("Sending mDNS query");
-  int n = MDNS.queryService("http", "udp");  // Send out query for esp tcp services
-  Serial.println("mDNS query done");
-  if (n == 0) {
-    Serial.println("no services found");
-  } else {
-    for (int i = 0; i < n; ++i) {
-      // Print details for each service found
-      Serial.print(i + 1);
-      Serial.print(": ");
-      Serial.print(MDNS.hostname(i));
-      Serial.print(" (");
-      Serial.print(MDNS.IP(i));
-      Serial.print(":");
-      Serial.print(MDNS.port(i));
-      Serial.println(")");
-    }
-  }
-  delay(1000);
 }
 
 void blinkLED(int count) {
