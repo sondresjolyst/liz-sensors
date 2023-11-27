@@ -16,13 +16,16 @@ extern const int WIFI_DELAY;
 extern const int WIFI_TRIES;
 
 DNSServer dnsServer;
+WiFiServer telnetServer(23);
+WiFiClient serverClient;
 
 bool connectWifi(String ssid, String password) {
   WiFi.begin(ssid.c_str(), password.c_str());
   int tries = 0;
   while (tries < WIFI_TRIES) {
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("Connected to WiFi");
+      telnetServer.begin();
+      telnetServer.setNoDelay(true);
       return true;
     }
     Serial.print(".");
@@ -46,6 +49,28 @@ void setupAP() {
   server.onNotFound(handleNotFound);
   server.begin();
   Serial.println("Access Point is up and running!");
+}
+
+void handleTelnet() {
+  if (telnetServer.hasClient()) {
+    if (!serverClient || !serverClient.connected()) {
+      if (serverClient) serverClient.stop();
+      serverClient = telnetServer.accept();
+    }
+  }
+
+  while (serverClient.available()) {
+    Serial.write(serverClient.read());
+  }
+
+  if (Serial.available()) {
+    size_t len = Serial.available();
+    uint8_t sbuf[len];
+    Serial.readBytes(sbuf, len);
+    serverClient.write(sbuf, len);
+    serverClient.flush();
+    delay(1);
+  }
 }
 
 class ResetWiFi {
@@ -74,7 +99,7 @@ public:
     }
 
     clearWifiCredentials();
-    buttonPressTime = 0;  // Reset the timer
+    buttonPressTime = 0;
   }
 
 private:
