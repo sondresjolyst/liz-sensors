@@ -10,6 +10,8 @@
 #include "WebServer.h"
 #include "WiFiHelper.h"
 #include "DHTHelper.h"
+#include "OTAHelper.h"
+#include "WIZHelper.h"
 
 String MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
 const uint8_t DHTTYPE = DHT11;
@@ -38,6 +40,7 @@ const int WIFI_TRIES = 15;
 DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
 ESP8266WebServer server(WEBSITE_PORT);
 ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
+OTAHelper* otaHelper = nullptr;
 
 void setup() {
   Serial.begin(SERIAL_PORT);
@@ -76,6 +79,11 @@ void setup() {
     dht.begin();
     server.on("/", webpage_status);
     server.begin();
+
+    otaHelper = new OTAHelper();
+    otaHelper->setup();
+
+    wizSetup();
   } else {
     setupAP();
   }
@@ -91,10 +99,16 @@ void loop() {
     return;
   }
 
+  if (otaHelper != nullptr) {
+    otaHelper->loop();
+  }
+
+  handleTelnet();
   server.handleClient();
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   readAndWriteDHT();
+  wizDiscover();
 }
 
 void blinkLED(int count) {

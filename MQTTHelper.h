@@ -19,9 +19,10 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAM
   String discoveryTopic = "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_temperature/config";
 
   DynamicJsonDocument doc(1024);
-  char buffer[256];
+  char buffer[512];
 
   doc["name"] = String(MQTT_HOSTNAME) + "_temperature";
+  doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "°C";
   doc["dev_cla"] = "temperature";
@@ -38,15 +39,41 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) 
   String discoveryTopic = "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_humidity/config";
 
   DynamicJsonDocument doc(1024);
-  char buffer[256];
+  char buffer[512];
 
   doc["name"] = String(MQTT_HOSTNAME) + "_humidity";
+  doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "%";
   doc["dev_cla"] = "humidity";
   doc["frc_upd"] = true;
   doc["uniq_id"] = String(MQTT_HOSTNAME) + "_humidity";
   doc["val_tpl"] = "{{value_json.humidity | round(3) | default(0)}}";
+
+  size_t n = serializeJson(doc, buffer);
+
+  client.publish(discoveryTopic.c_str(), buffer, n);
+}
+
+void sendMQTTWizDiscoveryMsg(String deviceIP, String deviceName) {
+  String discoveryTopic = "homeassistant/switch/" + deviceName + "/config";
+
+  DynamicJsonDocument doc(1024);
+  char buffer[512];
+
+  doc["name"] = deviceName;
+  doc["command_topic"] = "home/" + deviceName + "/set";
+  doc["state_topic"] = "home/" + deviceName + "/state";
+  doc["payload_on"] = "ON";
+  doc["payload_off"] = "OFF";
+  doc["optimistic"] = false;
+  doc["qos"] = 1;
+  doc["retain"] = true;
+  doc["uniq_id"] = deviceName;
+  doc["device"]["identifiers"] = deviceName;
+  doc["device"]["name"] = deviceName;
+  doc["device"]["model"] = "Wiz Light";
+  doc["device"]["manufacturer"] = "Wiz";
 
   size_t n = serializeJson(doc, buffer);
 

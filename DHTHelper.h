@@ -2,8 +2,12 @@
 #define DHTHELPER_H
 
 #include <DHT.h>
+#include "PRINTHelper.h"
 
 extern DHT dht;
+extern WiFiClient serverClient;
+// extern WiFiClient espClient;
+extern PubSubClient client;
 
 const int DHT_NUM_READINGS = 10;
 const int DHT_READ_DELAY = 2000;
@@ -15,8 +19,7 @@ float totalHumid = 0;
 float totalTemp = 0;
 int readIndex = 0;
 
-extern WiFiClient espClient;
-extern PubSubClient client;
+PRINTHelper printHelper(serverClient);
 
 void readAndWriteDHT() {
   static unsigned long lastToggleTime = 0;
@@ -28,7 +31,7 @@ void readAndWriteDHT() {
     totalHumid -= humidReadings[readIndex];
 
     tempReadings[readIndex] = dht.readTemperature() - 2;
-    humidReadings[readIndex] = dht.readHumidity() + 2.5;
+    humidReadings[readIndex] = dht.readHumidity() + 4;
 
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];
