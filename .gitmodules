@@ -1,0 +1,3 @@
+[submodule "lib/liz"]
+	path = lib/liz
+	url = git@github.com:sondresjolyst/liz.git
