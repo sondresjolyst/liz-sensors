@@ -6,7 +6,7 @@
 #include <ESP8266WiFi.h>
 
 extern ESP8266WebServer server;
-extern WiFiClient espClient;
+extern WiFiClient serverClient;
 extern PubSubClient client;
 
 const char* html = "<html>...</html>";

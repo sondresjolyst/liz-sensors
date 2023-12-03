@@ -2,6 +2,8 @@
 #define DHTHELPER_H
 
 #include <DHT.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include "PRINTHelper.h"
 
 extern DHT dht;
@@ -18,6 +20,7 @@ float tempReadings[DHT_NUM_READINGS];
 float totalHumid = 0;
 float totalTemp = 0;
 int readIndex = 0;
+extern String MQTT_STATETOPIC;
 
 PRINTHelper printHelper(serverClient);
 
