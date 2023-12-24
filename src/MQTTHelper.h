@@ -202,6 +202,11 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
   }
 }
 
+bool mqttStatus()
+{
+  return client.connected();
+}
+
 void connectToMQTT()
 {
   Serial.print("Attempting to connect to MQTT broker: ");

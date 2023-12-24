@@ -211,6 +211,11 @@ void loop()
     return;
   }
 
+  if ((mqttStatus() == false))
+  {
+    connectToMQTT();
+  }
+
   if (otaHelper != nullptr)
   {
     otaHelper->loop();

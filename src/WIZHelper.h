@@ -47,7 +47,6 @@ WiFiUDP Udp;
 //       deserializeJson(doc, incomingPacket);
 //       String deviceMac = doc["result"]["devMac"];
 
-
 //       bool deviceDiscovered = false;
 //       for (const auto& device : discoveredDevices) {
 //         if (device.first == deviceIP) {
@@ -129,7 +128,8 @@ WiFiUDP Udp;
 //   }
 // }
 
-void wizSetup() {
+void wizSetup()
+{
   Udp.begin(localUdpPort);
   printHelper.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 }

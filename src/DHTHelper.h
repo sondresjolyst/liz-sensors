@@ -19,22 +19,26 @@ float humidReadings[DHT_NUM_READINGS];
 float tempReadings[DHT_NUM_READINGS];
 float totalHumid = 0;
 float totalTemp = 0;
+float tempOffet = -1;
+float humidOffset = 7;
 int readIndex = 0;
 extern String MQTT_STATETOPIC;
 
 PRINTHelper printHelper(serverClient);
 
-void readAndWriteDHT() {
+void readAndWriteDHT()
+{
   static unsigned long lastToggleTime = 0;
 
-  if (millis() - lastToggleTime >= DHT_READ_DELAY) {
+  if (millis() - lastToggleTime >= DHT_READ_DELAY)
+  {
     lastToggleTime = millis();
 
     totalTemp -= tempReadings[readIndex];
     totalHumid -= humidReadings[readIndex];
 
-    tempReadings[readIndex] = dht.readTemperature() - 2;
-    humidReadings[readIndex] = dht.readHumidity() + 4;
+    tempReadings[readIndex] = dht.readTemperature() + tempOffet;
+    humidReadings[readIndex] = dht.readHumidity() + humidOffset;
 
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];

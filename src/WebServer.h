@@ -9,21 +9,26 @@ extern ESP8266WebServer server;
 extern WiFiClient serverClient;
 extern PubSubClient client;
 
-const char* html = "<html>...</html>";
+const char *html = "<html>...</html>";
 
-String getWifiOptions() {
+String getWifiOptions()
+{
   int n = WiFi.scanNetworks();
   String options = "";
 
   String ssids[n];
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++)
+  {
     ssids[i] = WiFi.SSID(i);
   }
 
-  for (int i = 0; i < n - 1; i++) {
-    for (int j = i + 1; j < n; j++) {
-      if (ssids[j] < ssids[i]) {
+  for (int i = 0; i < n - 1; i++)
+  {
+    for (int j = i + 1; j < n; j++)
+    {
+      if (ssids[j] < ssids[i])
+      {
         String temp = ssids[i];
         ssids[i] = ssids[j];
         ssids[j] = temp;
@@ -31,14 +36,16 @@ String getWifiOptions() {
     }
   }
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++)
+  {
     options += "<option value='" + ssids[i] + "'>" + ssids[i] + "</option>";
   }
 
   return options;
 }
 
-void handleRoot() {
+void handleRoot()
+{
   String options = getWifiOptions();
   String html = "<html>\
 <head>\
@@ -91,8 +98,8 @@ void handleRoot() {
     <h1>ESP8266 Configuration</h1>\
     <form action=\"/submit\" method=\"POST\">\
       <label for=\"ssid\">SSID:</label><br>\
-      <select id=\"ssid\" name=\"ssid\">"
-                + options + "</select><br>\
+      <select id=\"ssid\" name=\"ssid\">" +
+                options + "</select><br>\
       <label for=\"password\">Password:</label><br>\
       <input type=\"password\" id=\"password\" name=\"password\"><br>\
       <input type=\"submit\" value=\"Connect!\">\
@@ -103,7 +110,8 @@ void handleRoot() {
   server.send(200, "text/html", html);
 }
 
-void webpage_status() {
+void webpage_status()
+{
   String html = "<html>\
   <body>\
     <h1>ESP8266 Web Server</h1>\
@@ -115,8 +123,10 @@ void webpage_status() {
   server.send(200, "text/html", html);
 }
 
-void handleSubmit() {
-  if (server.hasArg("ssid") && server.hasArg("password")) {
+void handleSubmit()
+{
+  if (server.hasArg("ssid") && server.hasArg("password"))
+  {
     String ssid = server.arg("ssid");
     String password = server.arg("password");
 
@@ -126,7 +136,9 @@ void handleSubmit() {
     server.send(200, "text/plain", "Data received. Restarting...");
     delay(1000);
     ESP.restart();
-  } else {
+  }
+  else
+  {
     server.send(400, "text/plain", "Missing SSID or password");
   }
 }

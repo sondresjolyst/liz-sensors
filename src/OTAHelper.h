@@ -6,33 +6,45 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
-void onStart() {
+void onStart()
+{
   Serial.println("Start");
 }
 
-void onEnd() {
+void onEnd()
+{
   Serial.println("\nEnd");
 }
 
-void onProgress(unsigned int progress, unsigned int total) {
+void onProgress(unsigned int progress, unsigned int total)
+{
   Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
 }
 
-void onError(ota_error_t error) {
+void onError(ota_error_t error)
+{
   Serial.printf("Error [%u]: ", error);
-  if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-  else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-  else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-  else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-  else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  if (error == OTA_AUTH_ERROR)
+    Serial.println("Auth Failed");
+  else if (error == OTA_BEGIN_ERROR)
+    Serial.println("Begin Failed");
+  else if (error == OTA_CONNECT_ERROR)
+    Serial.println("Connect Failed");
+  else if (error == OTA_RECEIVE_ERROR)
+    Serial.println("Receive Failed");
+  else if (error == OTA_END_ERROR)
+    Serial.println("End Failed");
 }
 
-class OTAHelper {
+class OTAHelper
+{
 public:
   OTAHelper() {}
 
-  void setup() {
-    if (WiFi.status() != WL_CONNECTED) {
+  void setup()
+  {
+    if (WiFi.status() != WL_CONNECTED)
+    {
       Serial.println("Error: No WiFi connection when setting up OTAHelper");
       return;
     }
@@ -46,7 +58,8 @@ public:
     Serial.println("OTA is ready");
   }
 
-  void loop() {
+  void loop()
+  {
     ArduinoOTA.handle();
   }
 };
