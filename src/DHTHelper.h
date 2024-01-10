@@ -19,8 +19,8 @@ float humidReadings[DHT_NUM_READINGS];
 float tempReadings[DHT_NUM_READINGS];
 float totalHumid = 0;
 float totalTemp = 0;
-float tempOffet = -1;
-float humidOffset = 7;
+float tempOffet = -3;
+float humidOffset = 6;
 int readIndex = 0;
 extern String MQTT_STATETOPIC;
 
