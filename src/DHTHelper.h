@@ -12,7 +12,7 @@ extern WiFiClient serverClient;
 extern PubSubClient client;
 
 const int DHT_NUM_READINGS = 10;
-const int DHT_READ_DELAY = 2000;
+const int DHT_READ_DELAY = 60000;
 float averageHumid = 0;
 float averageTemp = 0;
 float humidReadings[DHT_NUM_READINGS];
@@ -32,6 +32,8 @@ void readAndWriteDHT()
 
   if (millis() - lastToggleTime >= DHT_READ_DELAY)
   {
+    int arrayLength = sizeof(tempReadings) / sizeof(tempReadings[0]);
+
     lastToggleTime = millis();
 
     totalTemp -= tempReadings[readIndex];
@@ -43,10 +45,10 @@ void readAndWriteDHT()
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];
 
-    readIndex = (readIndex + 1) % DHT_NUM_READINGS;
+    readIndex = (readIndex + 1) % arrayLength;
 
-    averageTemp = totalTemp / DHT_NUM_READINGS;
-    averageHumid = totalHumid / DHT_NUM_READINGS;
+    averageTemp = totalTemp / arrayLength;
+    averageHumid = totalHumid / arrayLength;
 
     DynamicJsonDocument doc(1024);
     char buffer[256];

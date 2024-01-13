@@ -17,10 +17,13 @@
 #include "PRINTHelper.h"
 #include <regex>
 
+uint32_t chipId = ESP.getChipId();
+String CHIP_ID_STRING = String(chipId, HEX);
+String MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
+const char *MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
 String MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
 const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
-const char *MQTT_HOSTNAME = "Wemos_D1_Mini_DH11";
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
 const char *WIFI_NAME = "Fuktsensor";
@@ -88,6 +91,14 @@ void setup()
 
     connectToMQTT();
     dht.begin();
+
+  for (int i = 0; i < DHT_NUM_READINGS; i++) {
+    tempReadings[i] = dht.readTemperature() + tempOffet;
+    humidReadings[i] = dht.readHumidity() + humidOffset;
+    totalTemp += tempReadings[i];
+    totalHumid += humidReadings[i];
+  }
+
     server.on("/", webpage_status);
     server.begin();
 
