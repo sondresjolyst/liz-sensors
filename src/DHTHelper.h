@@ -11,7 +11,7 @@ extern WiFiClient serverClient;
 // extern WiFiClient espClient;
 extern PubSubClient client;
 
-const int DHT_NUM_READINGS = 10;
+const int DHT_NUM_READINGS = 5;
 const int DHT_READ_DELAY = 60000;
 float averageHumid = 0;
 float averageTemp = 0;
