@@ -16,6 +16,11 @@
 #include "liz.h"
 #include "PRINTHelper.h"
 #include <regex>
+#include "BMEHelper.h"
+#include <cstring>
+#include <Wire.h>
+
+Adafruit_BME280 bme;
 
 uint32_t chipId = ESP.getChipId();
 String CHIP_ID_STRING = String(chipId, HEX);
@@ -26,6 +31,7 @@ const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
+const char *SENSOR = "BME"; // "BME" or "DHT"
 const char *WIFI_NAME = "Fuktsensor";
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
@@ -43,7 +49,7 @@ const int SERIAL_PORT = 9600;
 const int WEBSITE_PORT = 80;
 const int WIFI_DELAY = 1000;
 const int WIFI_TRIES = 15;
-const char *ipaddress = "192.168.1.203";
+// const char *ipaddress = "192.168.1.203";
 const int port = 38899;
 const int runGetPilot_BLINK_DELAY = 2000;
 
@@ -51,7 +57,7 @@ DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
 ESP8266WebServer server(WEBSITE_PORT);
 ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
 OTAHelper *otaHelper = nullptr;
-extern PRINTHelper printHelper;
+PRINTHelper printHelper(serverClient);
 
 void setup()
 {
@@ -90,14 +96,41 @@ void setup()
     Serial.println(WiFi.localIP());
 
     connectToMQTT();
-    dht.begin();
 
-  for (int i = 0; i < DHT_NUM_READINGS; i++) {
-    tempReadings[i] = dht.readTemperature() + tempOffet;
-    humidReadings[i] = dht.readHumidity() + humidOffset;
-    totalTemp += tempReadings[i];
-    totalHumid += humidReadings[i];
-  }
+    if (strcmp(SENSOR, "DHT") == 0)
+    {
+      dht.begin();
+
+      for (int i = 0; i < DHT_NUM_READINGS; i++)
+      {
+        DHTtempReadings[i] = dht.readTemperature() + DHTtempOffset;
+        DHThumidReadings[i] = dht.readHumidity() + DHThumidOffset;
+        DHTtotalTemp += DHTtempReadings[i];
+        DHTtotalHumid += DHThumidReadings[i];
+      }
+    }
+    else if (strcmp(SENSOR, "BME") == 0)
+    {
+      Serial.print("Sensor type is BME");
+      Wire.begin();
+      if (!bme.begin(0x76))
+      {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        while (1)
+          ;
+      }
+      for (int i = 0; i < BME_NUM_READINGS; i++)
+      {
+        BMEtempReadings[i] = bme.readTemperature() + BMEtempOffset;
+        BMEhumidReadings[i] = bme.readHumidity() + BMEhumidOffset;
+        BMEtotalTemp += BMEtempReadings[i];
+        BMEtotalHumid += BMEhumidReadings[i];
+      }
+    }
+    else
+    {
+      Serial.print("Error: No sensor type selected!");
+    }
 
     server.on("/", webpage_status);
     server.begin();
@@ -140,44 +173,6 @@ void blinkLED(int count)
     }
   }
 }
-
-// void runGetPilot(std::string deviceIP)
-// {
-//   auto response = liz::getPilot(deviceIP.c_str(), port, 5000);
-//   if (response)
-//   {
-//     printHelper.println(response->c_str());
-//     printHelper.println("");
-
-//     DynamicJsonDocument doc(1024);
-//     DeserializationError error = deserializeJson(doc, response->c_str());
-//     if (error)
-//     {
-//       printHelper.println("Failed to parse JSON response");
-//     }
-//     else
-//     {
-//       std::string deviceMac = doc["result"]["devMac"];
-//       std::string moduleName = doc["result"]["moduleName"];
-//       bool state = doc["result"]["state"];
-
-//       // Filter out "SOCKET" or "SHRGBC"
-//       std::smatch match;
-//       if (std::regex_search(moduleName, match, std::regex("(SOCKET|SHRGBC)")))
-//       {
-//         moduleName = match.str();
-//       }
-
-//       std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
-
-//       printHelper.print("MAC: ");
-//       printHelper.println(deviceMac.c_str());
-//       printHelper.print("State: ");
-//       printHelper.println(state ? "true" : "false");
-//       publishWizState(deviceName.c_str(), state);
-//     }
-//   }
-// }
 
 void discoverAndSubscribe()
 {
@@ -224,6 +219,7 @@ void loop()
 
   if ((mqttStatus() == false))
   {
+    Serial.print("Connecting to MQTT");
     connectToMQTT();
   }
 
@@ -237,7 +233,14 @@ void loop()
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   client.loop();
-  readAndWriteDHT();
+  if (strcmp(SENSOR, "DHT") == 0)
+  {
+    readAndWriteDHT();
+  }
+  else if (strcmp(SENSOR, "BME") == 0)
+  {
+    readAndWriteBME();
+  }
   // runGetPilot();
   discoverAndSubscribe();
 }

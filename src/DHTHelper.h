@@ -13,18 +13,18 @@ extern PubSubClient client;
 
 const int DHT_NUM_READINGS = 5;
 const int DHT_READ_DELAY = 60000;
-float averageHumid = 0;
-float averageTemp = 0;
-float humidReadings[DHT_NUM_READINGS];
-float tempReadings[DHT_NUM_READINGS];
-float totalHumid = 0;
-float totalTemp = 0;
-float tempOffet = -3;
-float humidOffset = 6;
-int readIndex = 0;
+float DHTaverageHumid = 0;
+float DHTaverageTemp = 0;
+float DHThumidReadings[DHT_NUM_READINGS];
+float DHTtempReadings[DHT_NUM_READINGS];
+float DHTtotalHumid = 0;
+float DHTtotalTemp = 0;
+float DHTtempOffset = -3;
+float DHThumidOffset = 6;
+int DHTreadIndex = 0;
 extern String MQTT_STATETOPIC;
 
-PRINTHelper printHelper(serverClient);
+extern PRINTHelper printHelper;
 
 void readAndWriteDHT()
 {
@@ -32,29 +32,29 @@ void readAndWriteDHT()
 
   if (millis() - lastToggleTime >= DHT_READ_DELAY)
   {
-    int arrayLength = sizeof(tempReadings) / sizeof(tempReadings[0]);
+    int arrayLength = sizeof(DHTtempReadings) / sizeof(DHTtempReadings[0]);
 
     lastToggleTime = millis();
 
-    totalTemp -= tempReadings[readIndex];
-    totalHumid -= humidReadings[readIndex];
+    DHTtotalTemp -= DHTtempReadings[DHTreadIndex];
+    DHTtotalHumid -= DHThumidReadings[DHTreadIndex];
 
-    tempReadings[readIndex] = dht.readTemperature() + tempOffet;
-    humidReadings[readIndex] = dht.readHumidity() + humidOffset;
+    DHTtempReadings[DHTreadIndex] = dht.readTemperature() + DHTtempOffset;
+    DHThumidReadings[DHTreadIndex] = dht.readHumidity() + DHThumidOffset;
 
-    totalTemp += tempReadings[readIndex];
-    totalHumid += humidReadings[readIndex];
+    DHTtotalTemp += DHTtempReadings[DHTreadIndex];
+    DHTtotalHumid += DHThumidReadings[DHTreadIndex];
 
-    readIndex = (readIndex + 1) % arrayLength;
+    DHTreadIndex = (DHTreadIndex + 1) % arrayLength;
 
-    averageTemp = totalTemp / arrayLength;
-    averageHumid = totalHumid / arrayLength;
+    DHTaverageTemp = DHTtotalTemp / arrayLength;
+    DHTaverageHumid = DHTtotalHumid / arrayLength;
 
     DynamicJsonDocument doc(1024);
     char buffer[256];
 
-    doc["temperature"] = averageTemp;
-    doc["humidity"] = averageHumid;
+    doc["temperature"] = DHTaverageTemp;
+    doc["humidity"] = DHTaverageHumid;
 
     size_t n = serializeJson(doc, buffer);
 
@@ -64,11 +64,11 @@ void readAndWriteDHT()
     Serial.println(published);
 
     Serial.print("Temperature: ");
-    Serial.print(averageTemp);
+    Serial.print(DHTaverageTemp);
     Serial.println(" °C");
 
     Serial.print("Humidity: ");
-    Serial.print(averageHumid);
+    Serial.print(DHTaverageHumid);
     Serial.println(" %");
   }
 }
