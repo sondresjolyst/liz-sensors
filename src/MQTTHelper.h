@@ -29,7 +29,7 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAM
   DynamicJsonDocument doc(1024);
   char buffer[512];
 
-  doc["name"] = CHIP_ID_STRING + " Temperature";
+  doc["name"] = "Liz " + CHIP_ID_STRING + " Temperature";
   doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "°C";
@@ -50,7 +50,7 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME)
   DynamicJsonDocument doc(1024);
   char buffer[512];
 
-  doc["name"] = CHIP_ID_STRING + " Humidity";
+  doc["name"] = "Liz " + CHIP_ID_STRING + " Humidity";
   doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "%";

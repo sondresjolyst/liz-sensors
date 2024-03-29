@@ -20,8 +20,8 @@ float BMEhumidReadings[BME_NUM_READINGS];
 float BMEtempReadings[BME_NUM_READINGS];
 float BMEtotalHumid = 0;
 float BMEtotalTemp = 0;
-float BMEtempOffset = 0;
-float BMEhumidOffset = 8;
+float BMEtempOffset = -1;
+float BMEhumidOffset = 9;
 int BMEreadIndex = 0;
 extern String MQTT_STATETOPIC;
 
