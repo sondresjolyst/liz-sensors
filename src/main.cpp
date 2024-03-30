@@ -5,22 +5,20 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
+#include <regex>
+#include <cstring>
+#include <Wire.h>
+
+#include "liz.h"
 #include "arduino_secrets.h"
 #include "EEPROMHelper.h"
 #include "MQTTHelper.h"
 #include "WebServer.h"
 #include "WiFiHelper.h"
-#include "DHTHelper.h"
 #include "OTAHelper.h"
 #include "WIZHelper.h"
-#include "liz.h"
 #include "PRINTHelper.h"
-#include <regex>
-#include "BMEHelper.h"
-#include <cstring>
-#include <Wire.h>
-
-Adafruit_BME280 bme;
+#include "SensorController.h"
 
 uint32_t chipId = ESP.getChipId();
 String CHIP_ID_STRING = String(chipId, HEX);
@@ -31,7 +29,7 @@ const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
-const char *SENSOR = "BME"; // "BME" or "DHT"
+const char *SENSOR_TYPE = "BME"; // "BME" or "DHT"
 const char *WIFI_NAME = "Fuktsensor";
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
@@ -53,6 +51,7 @@ const int WIFI_TRIES = 15;
 const int port = 38899;
 const int runGetPilot_BLINK_DELAY = 2000;
 
+Adafruit_BME280 bme;
 DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
 ESP8266WebServer server(WEBSITE_PORT);
 ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
@@ -96,41 +95,7 @@ void setup()
     Serial.println(WiFi.localIP());
 
     connectToMQTT();
-
-    if (strcmp(SENSOR, "DHT") == 0)
-    {
-      dht.begin();
-
-      for (int i = 0; i < DHT_NUM_READINGS; i++)
-      {
-        DHTtempReadings[i] = dht.readTemperature() + DHTtempOffset;
-        DHThumidReadings[i] = dht.readHumidity() + DHThumidOffset;
-        DHTtotalTemp += DHTtempReadings[i];
-        DHTtotalHumid += DHThumidReadings[i];
-      }
-    }
-    else if (strcmp(SENSOR, "BME") == 0)
-    {
-      Serial.print("Sensor type is BME");
-      Wire.begin();
-      if (!bme.begin(0x76))
-      {
-        Serial.println("Could not find a valid BME280 sensor, check wiring!");
-        while (1)
-          ;
-      }
-      for (int i = 0; i < BME_NUM_READINGS; i++)
-      {
-        BMEtempReadings[i] = bme.readTemperature() + BMEtempOffset;
-        BMEhumidReadings[i] = bme.readHumidity() + BMEhumidOffset;
-        BMEtotalTemp += BMEtempReadings[i];
-        BMEtotalHumid += BMEhumidReadings[i];
-      }
-    }
-    else
-    {
-      Serial.print("Error: No sensor type selected!");
-    }
+    environmentalSensorSetup(SENSOR_TYPE);
 
     server.on("/", webpage_status);
     server.begin();
@@ -233,14 +198,7 @@ void loop()
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   client.loop();
-  if (strcmp(SENSOR, "DHT") == 0)
-  {
-    readAndWriteDHT();
-  }
-  else if (strcmp(SENSOR, "BME") == 0)
-  {
-    readAndWriteBME();
-  }
+  readAndWriteEnvironmentalSensors(SENSOR_TYPE);
   // runGetPilot();
   discoverAndSubscribe();
 }
