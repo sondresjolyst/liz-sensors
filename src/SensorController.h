@@ -9,6 +9,7 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <cmath>
 
 #include "PRINTHelper.h"
 #include "PRINTHelper.h"
@@ -34,6 +35,11 @@ float tempReadings[READING_BUFFER];
 float totalHumid = 0;
 float totalTemp = 0;
 int readIndex = 0;
+
+float currentTempReadings = 0;
+float currentHumidReadings = 0;
+int failedTempReadings = 0;
+int failedHumidReadings = 0;
 
 extern PRINTHelper printHelper;
 
@@ -76,6 +82,22 @@ void environmentalSensorSetup(const char *SENSOR_TYPE)
   }
 }
 
+void checkAndRestartIfFailed(float reading, int &failedReadings)
+{
+  if (std::isnan(reading))
+  {
+    failedReadings += 1;
+    if (failedReadings >= 10)
+    {
+      ESP.restart();
+    }
+  }
+  else
+  {
+    failedReadings = 0;
+  }
+}
+
 void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
 {
   static unsigned long lastToggleTime = 0;
@@ -91,14 +113,23 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
 
     if (strcmp(SENSOR_TYPE, "DHT") == 0)
     {
-      tempReadings[readIndex] = dht.readTemperature() + DHTtempOffset;
-      humidReadings[readIndex] = dht.readHumidity() + DHThumidOffset;
+      currentTempReadings = dht.readTemperature();
+      currentHumidReadings = dht.readHumidity();
+
+      tempReadings[readIndex] = currentTempReadings + DHTtempOffset;
+      humidReadings[readIndex] = currentHumidReadings + DHThumidOffset;
     }
     if (strcmp(SENSOR_TYPE, "BME") == 0)
     {
-      tempReadings[readIndex] = bme.readTemperature() + BMEtempOffset;
-      humidReadings[readIndex] = bme.readHumidity() + BMEhumidOffset;
+      currentTempReadings = bme.readTemperature();
+      currentHumidReadings = bme.readHumidity();
+
+      tempReadings[readIndex] = currentTempReadings + BMEtempOffset;
+      humidReadings[readIndex] = currentHumidReadings + BMEhumidOffset;
     }
+
+    checkAndRestartIfFailed(currentTempReadings, failedTempReadings);
+    checkAndRestartIfFailed(currentHumidReadings, failedHumidReadings);
 
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];
