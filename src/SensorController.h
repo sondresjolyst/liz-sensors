@@ -82,10 +82,12 @@ void environmentalSensorSetup(const char *SENSOR_TYPE)
   }
 }
 
-void checkAndRestartIfFailed(float reading, int &failedReadings)
+void checkAndRestartIfFailed(float *reading, int &failedReadings)
 {
-  if (std::isnan(reading))
+  printHelper.println("Checking if reading failed");
+  if (reading == nullptr || std::isnan(*reading))
   {
+    printHelper.printf("Reading: %s", String(*reading));
     failedReadings += 1;
     if (failedReadings >= 10)
     {
@@ -94,6 +96,8 @@ void checkAndRestartIfFailed(float reading, int &failedReadings)
   }
   else
   {
+    printHelper.println("Reading OK");
+    printHelper.printf("Reading: %s", String(*reading));
     failedReadings = 0;
   }
 }
@@ -128,8 +132,8 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
       humidReadings[readIndex] = currentHumidReadings + BMEhumidOffset;
     }
 
-    checkAndRestartIfFailed(currentTempReadings, failedTempReadings);
-    checkAndRestartIfFailed(currentHumidReadings, failedHumidReadings);
+    checkAndRestartIfFailed(&currentTempReadings, failedTempReadings);
+    checkAndRestartIfFailed(&currentHumidReadings, failedHumidReadings);
 
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];
