@@ -89,6 +89,7 @@ void checkAndRestartIfFailed(float *reading, int &failedReadings)
   {
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings += 1;
+    printHelper.printf("Failed count: %s", String(failedReadings));
     if (failedReadings >= 10)
     {
       ESP.restart();
