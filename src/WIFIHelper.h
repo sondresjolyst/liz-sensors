@@ -6,7 +6,7 @@
 #include <ESP8266mDNS.h>
 #include "EEPROMHelper.h"
 
-extern const char *WIFI_NAME;
+extern String WIFI_NAME;
 extern const int DNS_PORT;
 extern const int EEPROM_PASSWORD_END;
 extern const int EEPROM_PASSWORD_START;

@@ -9,6 +9,7 @@
 #include <regex>
 
 extern String CHIP_ID_STRING;
+extern const char *LIZ_TYPE;
 extern String MQTT_STATETOPIC;
 extern const char *MQTT_BROKER;
 extern const char *MQTT_HOSTNAME;
@@ -58,6 +59,27 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME)
   doc["frc_upd"] = true;
   doc["uniq_id"] = String(MQTT_HOSTNAME) + "_humidity";
   doc["val_tpl"] = "{{value_json.humidity | round(3) | default(0)}}";
+
+  size_t n = serializeJson(doc, buffer);
+
+  client.publish(discoveryTopic.c_str(), buffer, n);
+}
+
+void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME)
+{
+  String discoveryTopic = "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "voltage/config";
+
+  DynamicJsonDocument doc(1024);
+  char buffer[512];
+
+  doc["name"] = "Liz " + CHIP_ID_STRING + " Voltage";
+  doc["stat_cla"] = "measurement";
+  doc["stat_t"] = MQTT_STATETOPIC;
+  doc["unit_of_meas"] = "V";
+  doc["dev_cla"] = "voltage";
+  doc["frc_upd"] = true;
+  doc["uniq_id"] = String(MQTT_HOSTNAME) + "_voltage";
+  doc["val_tpl"] = "{{value_json.voltage | round(3) | default(0)}}";
 
   size_t n = serializeJson(doc, buffer);
 
@@ -226,8 +248,15 @@ void connectToMQTT()
       Serial.println("");
       Serial.println("MQTT connected");
 
-      sendMQTTTemperatureDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
-      sendMQTTHumidityDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+      if (strcmp(LIZ_TYPE, "sensor") == 0)
+      {
+        sendMQTTTemperatureDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+        sendMQTTHumidityDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+      }
+      else if (strcmp(LIZ_TYPE, "voltmeter") == 0)
+      {
+        sendMQTTVoltageDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+      }
     }
     else
     {

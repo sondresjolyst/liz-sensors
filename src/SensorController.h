@@ -4,14 +4,11 @@
 #include <DHT.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include <cmath>
 
-#include "PRINTHelper.h"
 #include "PRINTHelper.h"
 
 extern DHT dht;
@@ -19,6 +16,7 @@ extern Adafruit_BME280 bme;
 extern WiFiClient serverClient;
 extern PubSubClient client;
 extern String MQTT_STATETOPIC;
+extern PRINTHelper printHelper;
 
 float BMEtempOffset = -1;
 float BMEhumidOffset = 9;
@@ -40,8 +38,6 @@ float currentTempReadings = 0;
 float currentHumidReadings = 0;
 int failedTempReadings = 0;
 int failedHumidReadings = 0;
-
-extern PRINTHelper printHelper;
 
 void environmentalSensorSetup(const char *SENSOR_TYPE)
 {
@@ -133,13 +129,29 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
       humidReadings[readIndex] = currentHumidReadings + BMEhumidOffset;
     }
 
-    checkAndRestartIfFailed(&currentTempReadings, failedTempReadings);
-    checkAndRestartIfFailed(&currentHumidReadings, failedHumidReadings);
-
     totalTemp += tempReadings[readIndex];
     totalHumid += humidReadings[readIndex];
 
+    checkAndRestartIfFailed(&totalTemp, failedTempReadings);
+    checkAndRestartIfFailed(&currentHumidReadings, failedHumidReadings);
+
+    // Debugging
+    printHelper.print("tempReadings: ");
+    printHelper.println(String(tempReadings[readIndex]));
+    printHelper.print("humidReadings: ");
+    printHelper.println(String(humidReadings[readIndex]));
+    printHelper.print("totalTemp: ");
+    printHelper.println(String(totalTemp));
+    printHelper.print("totalHumid: ");
+    printHelper.println(String(totalHumid));
+
     readIndex = (readIndex + 1) % arrayLength;
+    
+    // Debugging
+    printHelper.print("readIndex: ");
+    printHelper.println(String(readIndex));
+    printHelper.print("arrayLength: ");
+    printHelper.println(String(arrayLength));
 
     averageTemp = totalTemp / arrayLength;
     averageHumid = totalHumid / arrayLength;
@@ -156,14 +168,23 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
 
     Serial.println("Published: ");
     Serial.println(published);
+    // Debugging
+    printHelper.print("Published: ");
+    printHelper.println(String(published));
 
     Serial.print("Temperature: ");
     Serial.print(averageTemp);
     Serial.println(" °C");
+    // Debugging
+    printHelper.print("averageTemp: ");
+    printHelper.println(String(averageTemp));
 
     Serial.print("Humidity: ");
     Serial.print(averageHumid);
     Serial.println(" %");
+    // Debugging
+    printHelper.print("averageHumid: ");
+    printHelper.println(String(averageHumid));
   }
 }
 

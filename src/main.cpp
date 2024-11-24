@@ -19,18 +19,20 @@
 #include "WIZHelper.h"
 #include "PRINTHelper.h"
 #include "SensorController.h"
+#include "VoltmeterController.h"
 
 uint32_t chipId = ESP.getChipId();
 String CHIP_ID_STRING = String(chipId, HEX);
 String MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
 const char *MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
 String MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
+String WIFI_NAME = "Liz Sensor " + String(MQTT_HOSTNAME);
 const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
-const char *SENSOR_TYPE = "BME"; // "BME" or "DHT"
-const char *WIFI_NAME = "Fuktsensor";
+const char *SENSOR_TYPE = "BME";    // "BME" or "DHT"
+const char *LIZ_TYPE = "voltmeter"; // "voltmeter" or "sensor"
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
 const int DNS_PORT = 53;
@@ -95,7 +97,18 @@ void setup()
     Serial.println(WiFi.localIP());
 
     connectToMQTT();
-    environmentalSensorSetup(SENSOR_TYPE);
+    if (strcmp(LIZ_TYPE, "sensor") == 0)
+    {
+      environmentalSensorSetup(SENSOR_TYPE);
+    }
+    else if (strcmp(LIZ_TYPE, "voltmeter") == 0)
+    {
+      voltageSensorSetup();
+    }
+    else
+    {
+      Serial.println("Please set LIZ_TYPE");
+    }
 
     server.on("/", webpage_status);
     server.begin();
@@ -198,7 +211,14 @@ void loop()
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   client.loop();
-  readAndWriteEnvironmentalSensors(SENSOR_TYPE);
+  if (strcmp(LIZ_TYPE, "sensor") == 0)
+  {
+    readAndWriteEnvironmentalSensors(SENSOR_TYPE);
+  }
+  else if (strcmp(LIZ_TYPE, "voltmeter") == 0)
+  {
+    readAndWriteVoltageSensor();
+  }
   // runGetPilot();
   discoverAndSubscribe();
 }
