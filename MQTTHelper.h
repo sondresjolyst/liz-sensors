@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <ESP8266WiFi.h>
+#include "PRINTHelper.h"
 
 extern String MQTT_STATETOPIC;
 extern const char* MQTT_BROKER;
@@ -12,6 +13,8 @@ extern const char* MQTT_PASS;
 extern const char* MQTT_USER;
 extern const int MQTT_PORT;
 
+extern std::vector<std::pair<String, String>> discoveredDevices;
+extern PRINTHelper printHelper;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -62,8 +65,8 @@ void sendMQTTWizDiscoveryMsg(String deviceIP, String deviceName) {
   char buffer[512];
 
   doc["name"] = deviceName;
-  doc["command_topic"] = "home/" + deviceName + "/set";
-  doc["state_topic"] = "home/" + deviceName + "/state";
+  doc["command_topic"] = "home/storage/" + deviceName + "/set";
+  doc["state_topic"] = "home/storage/" + deviceName + "/state";
   doc["payload_on"] = "ON";
   doc["payload_off"] = "OFF";
   doc["optimistic"] = false;
@@ -80,12 +83,34 @@ void sendMQTTWizDiscoveryMsg(String deviceIP, String deviceName) {
   client.publish(discoveryTopic.c_str(), buffer, n);
 }
 
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String payloadStr;
+  for (unsigned int i = 0; i < length; i++) {
+    payloadStr += (char)payload[i];
+  }
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  printHelper.println(payloadStr);
+
+  // TODO: Add code here to send a command to the Wiz light based on the payload
+}
+
+void publishWizState(String deviceName, bool lightState) {
+  String payload = lightState ? "ON" : "OFF";
+
+  String stateTopic = "home/storage/" + deviceName + "/state";
+  client.publish(stateTopic.c_str(), payload.c_str());
+}
+
 void connectToMQTT() {
   Serial.print("Attempting to connect to MQTT broker: ");
   Serial.print(MQTT_BROKER);
 
   client.setServer(MQTT_BROKER, MQTT_PORT);
   client.setBufferSize(512);
+  client.setCallback(mqttCallback);
 
   while (!client.connected()) {
     Serial.print(".");

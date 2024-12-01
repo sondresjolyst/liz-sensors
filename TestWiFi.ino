@@ -12,6 +12,7 @@
 #include "DHTHelper.h"
 #include "OTAHelper.h"
 #include "WIZHelper.h"
+#include "liz.h"
 
 String MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
 const uint8_t DHTTYPE = DHT11;
@@ -36,6 +37,8 @@ const int SERIAL_PORT = 9600;
 const int WEBSITE_PORT = 80;
 const int WIFI_DELAY = 1000;
 const int WIFI_TRIES = 15;
+const char* ipaddress = "192.168.1.100";
+const int port = 38899;
 
 DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
 ESP8266WebServer server(WEBSITE_PORT);
@@ -108,7 +111,8 @@ void loop() {
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   readAndWriteDHT();
-  wizDiscover();
+  std::string response = liz::getPilot(ipaddress, port);
+  printHelper.println(response.c_str());
 }
 
 void blinkLED(int count) {
