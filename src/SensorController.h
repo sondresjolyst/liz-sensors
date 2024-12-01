@@ -18,8 +18,8 @@ extern PubSubClient client;
 extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 
-float BMEtempOffset = -1;
-float BMEhumidOffset = 9;
+float BMEtempOffset = -3.49;
+float BMEhumidOffset = 15;
 
 float DHTtempOffset = -3;
 float DHThumidOffset = 6;

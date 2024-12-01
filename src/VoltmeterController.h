@@ -16,8 +16,8 @@ const int ANALOG_RESOLUTION = 1024;        // 10-bit resolution
 const float ANALOG_VOLTAGE = 3.3;          // Reference voltage for ESP8266 ADC
 const float R1 = 10000.0;                  // 10kΩ
 const float R2 = 4700.0;                   // 4.7kΩ
-const float ACTUAL_BATTERY_VOLTAGE = 9.65; // Measured voltage from multimeter
-const float MEASURED_VOLTAGE = 9.98;       // Voltage output from ESP8266
+const float ACTUAL_BATTERY_VOLTAGE = 13.01; // Measured voltage from multimeter 13.01
+const float MEASURED_VOLTAGE = 10.32;       // Voltage output from ESP8266
 const float CALIBRATION_FACTOR = ACTUAL_BATTERY_VOLTAGE / MEASURED_VOLTAGE;
 
 const int READ_VOLTAGE_DELAY = 60000;
@@ -40,6 +40,7 @@ float readVoltage()
 
   // Calculate the actual input voltage using the voltage divider formula
   float vin = vout * ((R1 + R2) / R2);
+  Serial.println(vin);
 
   // Apply the calibration factor
   vin *= CALIBRATION_FACTOR;
