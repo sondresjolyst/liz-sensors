@@ -1,0 +1,29 @@
+name: 🧹 Lint
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions: {}
+
+jobs:
+  lint-codebase:
+    name: Lint codebase
+    uses: equinor/ops-actions/.github/workflows/super-linter.yml@v9.10.4
+    permissions:
+      contents: read
+      statuses: write
+    with:
+      filter_regex_exclude: (.*CHANGELOG\.md$|docs/workflows/.*)
+
+  lint-pr:
+    name: Lint PR
+    uses: equinor/ops-actions/.github/workflows/commitlint.yml@v9.10.4
+    with:
+      message: ${{ github.event.pull_request.title }}
