@@ -25,5 +25,7 @@ jobs:
   lint-pr:
     name: Lint PR
     uses: equinor/ops-actions/.github/workflows/commitlint.yml@v9.10.4
+    permissions:
+      contents: read
     with:
       message: ${{ github.event.pull_request.title }}
