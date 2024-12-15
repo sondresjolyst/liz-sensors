@@ -146,7 +146,7 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
     printHelper.println(String(totalHumid));
 
     readIndex = (readIndex + 1) % arrayLength;
-    
+
     // Debugging
     printHelper.print("readIndex: ");
     printHelper.println(String(readIndex));
