@@ -16,7 +16,7 @@ const int ANALOG_RESOLUTION = 1024;    // 10-bit resolution
 const float ANALOG_VOLTAGE = 3.32;     // Reference voltage for ESP8266 ADC
 const float R1 = 10000.0;              // 10kΩ
 const float R2 = 4700.0;               // 4.7kΩ
-const float CORRECTION_FACTOR = 1.228; // multimeter voltage / voltageMeasured
+const float CORRECTION_FACTOR = 1.218; // multimeter voltage / voltageMeasured
 
 // Corrected constants for exponential correction
 // Constants a and b are calculated based on curve fitting using known points:
