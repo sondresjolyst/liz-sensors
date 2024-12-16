@@ -158,7 +158,7 @@ void discoverAndSubscribe()
   auto oldDiscoveredDevices = liz::getDiscoveredDevices();
 
   // Discover devices
-  auto discoveredDevices = liz::discover(port, 5000);
+  auto discoveredDevices = liz::discover(port, 60000);
 
   // Only subscribe if a new device has been discovered
   for (const auto &device : discoveredDevices)
