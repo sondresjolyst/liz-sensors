@@ -12,13 +12,34 @@ extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;
-const int ANALOG_RESOLUTION = 1024;        // 10-bit resolution
-const float ANALOG_VOLTAGE = 3.3;          // Reference voltage for ESP8266 ADC
-const float R1 = 10000.0;                  // 10kΩ
-const float R2 = 4700.0;                   // 4.7kΩ
-const float ACTUAL_BATTERY_VOLTAGE = 13.01; // Measured voltage from multimeter 13.01
-const float MEASURED_VOLTAGE = 10.32;       // Voltage output from ESP8266
-const float CALIBRATION_FACTOR = ACTUAL_BATTERY_VOLTAGE / MEASURED_VOLTAGE;
+const int ANALOG_RESOLUTION = 1024;    // 10-bit resolution
+const float ANALOG_VOLTAGE = 3.32;     // Reference voltage for ESP8266 ADC
+const float R1 = 10000.0;              // 10kΩ
+const float R2 = 4700.0;               // 4.7kΩ
+const float CORRECTION_FACTOR = 1.218; // multimeter voltage / voltageMeasured
+
+// Corrected constants for exponential correction
+// Constants a and b are calculated based on curve fitting using known points:
+// Point 1: (Measured Voltage: 5.25, Actual Voltage: 5.09)
+// Point 2: (Measured Voltage: 10.38, Actual Voltage: 12.65)
+// Steps to calculate a and b:
+// 1. Convert the known points to natural logarithms.
+// 2. Solve the system of linear equations to find b.
+// 3. Use b to solve for a.
+//
+// Using points (5.25, 5.09) and (10.38, 12.65):
+// ln(5.09) = ln(a) + b * ln(5.25)
+// ln(12.65) = ln(a) + b * ln(10.38)
+//
+// Solve for b:
+// b = (ln(12.65) - ln(5.09)) / (ln(10.38) - ln(5.25))
+// b ≈ 1.33555
+//
+// Solve for a:
+// a = exp(ln(5.09) - b * ln(5.25))
+// a ≈ 0.555788
+const float a = 0.555788;
+const float b = 1.33555;
 
 const int READ_VOLTAGE_DELAY = 60000;
 const int READING_VOLTAGE_BUFFER = 5;
@@ -33,25 +54,49 @@ int failedVoltageReadings = 0;
 float readVoltage()
 {
   int sensorValue = analogRead(ANALOG_IN_PIN);
+  Serial.print("Sensor Value: ");
   Serial.println(sensorValue);
 
-  // Calculate the voltage at the A0 pin
-  float vout = (static_cast<float>(sensorValue) / ANALOG_RESOLUTION) * ANALOG_VOLTAGE;
+  // Calculate the measured voltage at the divider output
+  float voltageMeasured = (ANALOG_VOLTAGE / ANALOG_RESOLUTION) * sensorValue;
+  Serial.print("Measured Voltage: ");
+  Serial.print(voltageMeasured);
+  Serial.println(" V");
 
-  // Calculate the actual input voltage using the voltage divider formula
-  float vin = vout * ((R1 + R2) / R2);
-  Serial.println(vin);
+  printHelper.print("Measured Voltage: ");
+  printHelper.print(String(voltageMeasured));
+  printHelper.println(" V");
 
-  // Apply the calibration factor
-  vin *= CALIBRATION_FACTOR;
+  float vinTest = voltageMeasured * ((R1 + R2) / R2);
+  Serial.print("Input Voltage: ");
+  Serial.print(vinTest);
+  Serial.println(" V");
 
-  // Suppress erroneous readings if needed
-  if (vin < 0.09)
-  {
-    vin = 0.0;
-  }
+  printHelper.print("Input Voltage: ");
+  printHelper.print(String(vinTest));
+  printHelper.println(" V");
 
-  return vin;
+  // calculated correction
+  float vinTestCorrected = voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
+  Serial.print("Input Voltage Corrected: ");
+  Serial.print(vinTestCorrected);
+  Serial.println(" V");
+
+  printHelper.print("Input Voltage Corrected: ");
+  printHelper.print(String(vinTestCorrected));
+  printHelper.println(" V");
+
+  // exponential correction
+  float vinTestCorrectedExponential = a * pow(vinTest, b);
+  Serial.print("Input Voltage exponential Corrected: ");
+  Serial.print(vinTestCorrectedExponential);
+  Serial.println(" V");
+
+  printHelper.print("Input Voltage exponential Corrected: ");
+  printHelper.print(String(vinTestCorrectedExponential));
+  printHelper.println(" V");
+
+  return vinTestCorrectedExponential;
 }
 
 void voltageSensorSetup()
@@ -114,7 +159,7 @@ void readAndWriteVoltageSensor()
 
     bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
 
-    Serial.println("Published: ");
+    Serial.print("Published: ");
     Serial.println(published);
     // Debugging
     printHelper.print("Published: ");
