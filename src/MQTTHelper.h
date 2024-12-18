@@ -248,6 +248,8 @@ void connectToMQTT()
       Serial.println("");
       Serial.println("MQTT connected");
 
+      liz::clearDiscoveredDevices();
+
       if (strcmp(LIZ_TYPE, "sensor") == 0)
       {
         sendMQTTTemperatureDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
