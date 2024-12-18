@@ -233,7 +233,9 @@ bool mqttStatus()
 void connectToMQTT()
 {
   Serial.print("Attempting to connect to MQTT broker: ");
-  Serial.print(MQTT_BROKER);
+  Serial.println(MQTT_BROKER);
+  printHelper.print("Attempting to connect to MQTT broker: ");
+  printHelper.println(MQTT_BROKER);
 
   client.setServer(MQTT_BROKER, MQTT_PORT);
   client.setBufferSize(512);
@@ -241,14 +243,14 @@ void connectToMQTT()
 
   while (!client.connected())
   {
-    Serial.print(".");
-
+    liz::clearDiscoveredDevices();
+    printHelper.println("Clearing Discovered Devices");
     if (client.connect(MQTT_HOSTNAME, MQTT_USER, MQTT_PASS))
     {
       Serial.println("");
       Serial.println("MQTT connected");
-
-      liz::clearDiscoveredDevices();
+      printHelper.println("");
+      printHelper.println("MQTT connected");
 
       if (strcmp(LIZ_TYPE, "sensor") == 0)
       {
@@ -264,6 +266,8 @@ void connectToMQTT()
     {
       Serial.print("MQTT connection failed! Error code = ");
       Serial.println(client.state());
+      printHelper.print("MQTT connection failed! Error code = ");
+      printHelper.println(String(client.state()));
     }
   }
 }
