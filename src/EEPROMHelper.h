@@ -8,22 +8,16 @@ extern const int EEPROM_SSID_END;
 extern const int EEPROM_PASSWORD_START;
 extern const int EEPROM_PASSWORD_END;
 
-void writeEEPROM(unsigned int start, int end, String data)
-{
+void writeEEPROM(unsigned int start, int end, String data) {
   unsigned int size = end - start;
-  if (data.length() > size)
-  {
+  if (data.length() > size) {
     data = data.substring(0, size);
   }
 
-  for (unsigned int i = 0; i < size; i++)
-  {
-    if (i < data.length())
-    {
+  for (unsigned int i = 0; i < size; i++) {
+    if (i < data.length()) {
       EEPROM.write(start + i, data[i]);
-    }
-    else
-    {
+    } else {
       EEPROM.write(start + i, 0);
     }
   }
@@ -31,20 +25,16 @@ void writeEEPROM(unsigned int start, int end, String data)
   EEPROM.commit();
 }
 
-String readEEPROM(int start, int end)
-{
+String readEEPROM(int start, int end) {
   String res = "";
-  for (int i = start; i < end; i++)
-  {
+  for (int i = start; i < end; i++) {
     res += char(EEPROM.read(i));
   }
   return res;
 }
 
-void clearWifiCredentials()
-{
-  for (int i = EEPROM_SSID_START; i < EEPROM_PASSWORD_END; i++)
-  {
+void clearWifiCredentials() {
+  for (int i = EEPROM_SSID_START; i < EEPROM_PASSWORD_END; i++) {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();

@@ -1,13 +1,14 @@
 #ifndef SENSORCONTROLLER_H
 #define SENSORCONTROLLER_H
 
+#include <Adafruit_BME280.h>
+#include <Adafruit_Sensor.h>
+#include <ArduinoJson.h>
 #include <DHT.h>
 #include <PubSubClient.h>
-#include <ArduinoJson.h>
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
 #include <cmath>
+
 
 #include "PRINTHelper.h"
 
@@ -39,72 +40,56 @@ float currentHumidReadings = 0;
 int failedTempReadings = 0;
 int failedHumidReadings = 0;
 
-void environmentalSensorSetup(const char *SENSOR_TYPE)
-{
-  if (strcmp(SENSOR_TYPE, "DHT") == 0)
-  {
+void environmentalSensorSetup(const char *SENSOR_TYPE) {
+  if (strcmp(SENSOR_TYPE, "DHT") == 0) {
     Serial.printf("Sensor type is: %s\n", SENSOR_TYPE);
     dht.begin();
 
-    for (int i = 0; i < READING_BUFFER; i++)
-    {
+    for (int i = 0; i < READING_BUFFER; i++) {
       tempReadings[i] = dht.readTemperature() + DHTtempOffset;
       humidReadings[i] = dht.readHumidity() + DHThumidOffset;
       totalTemp += tempReadings[i];
       totalHumid += humidReadings[i];
     }
-  }
-  else if (strcmp(SENSOR_TYPE, "BME") == 0)
-  {
+  } else if (strcmp(SENSOR_TYPE, "BME") == 0) {
     Serial.printf("Sensor type is: %s\n", SENSOR_TYPE);
     Wire.begin();
-    if (!bme.begin(0x76))
-    {
+    if (!bme.begin(0x76)) {
       Serial.println("Could not find a valid BME280 sensor, check wiring!");
       while (1)
         ;
     }
-    for (int i = 0; i < READING_BUFFER; i++)
-    {
+    for (int i = 0; i < READING_BUFFER; i++) {
       tempReadings[i] = bme.readTemperature() + BMEtempOffset;
       humidReadings[i] = bme.readHumidity() + BMEhumidOffset;
       totalTemp += tempReadings[i];
       totalHumid += humidReadings[i];
     }
-  }
-  else
-  {
+  } else {
     Serial.print("Error: No sensor type selected!");
   }
 }
 
-void checkAndRestartIfFailed(float *reading, int &failedReadings)
-{
+void checkAndRestartIfFailed(float *reading, int &failedReadings) {
   printHelper.println("Checking if reading failed");
-  if (reading == nullptr || std::isnan(*reading))
-  {
+  if (reading == nullptr || std::isnan(*reading)) {
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings += 1;
     printHelper.printf("Failed count: %s", String(failedReadings));
-    if (failedReadings >= 10)
-    {
+    if (failedReadings >= 10) {
       ESP.restart();
     }
-  }
-  else
-  {
+  } else {
     printHelper.println("Reading OK");
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings = 0;
   }
 }
 
-void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
-{
+void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE) {
   static unsigned long lastToggleTime = 0;
 
-  if (millis() - lastToggleTime >= READ_DELAY)
-  {
+  if (millis() - lastToggleTime >= READ_DELAY) {
     int arrayLength = sizeof(tempReadings) / sizeof(tempReadings[0]);
 
     lastToggleTime = millis();
@@ -112,16 +97,14 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE)
     totalTemp -= tempReadings[readIndex];
     totalHumid -= humidReadings[readIndex];
 
-    if (strcmp(SENSOR_TYPE, "DHT") == 0)
-    {
+    if (strcmp(SENSOR_TYPE, "DHT") == 0) {
       currentTempReadings = dht.readTemperature();
       currentHumidReadings = dht.readHumidity();
 
       tempReadings[readIndex] = currentTempReadings + DHTtempOffset;
       humidReadings[readIndex] = currentHumidReadings + DHThumidOffset;
     }
-    if (strcmp(SENSOR_TYPE, "BME") == 0)
-    {
+    if (strcmp(SENSOR_TYPE, "BME") == 0) {
       currentTempReadings = bme.readTemperature();
       currentHumidReadings = bme.readHumidity();
 

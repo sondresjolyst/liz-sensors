@@ -51,8 +51,7 @@ int readVoltageIndex = 0;
 float currentVoltageReadings = 0;
 int failedVoltageReadings = 0;
 
-float readVoltage()
-{
+float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
   Serial.print("Sensor Value: ");
   Serial.println(sensorValue);
@@ -77,7 +76,8 @@ float readVoltage()
   printHelper.println(" V");
 
   // calculated correction
-  float vinTestCorrected = voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
+  float vinTestCorrected =
+      voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
   Serial.print("Input Voltage Corrected: ");
   Serial.print(vinTestCorrected);
   Serial.println(" V");
@@ -99,44 +99,35 @@ float readVoltage()
   return vinTestCorrectedExponential;
 }
 
-void voltageSensorSetup()
-{
+void voltageSensorSetup() {
   pinMode(ANALOG_IN_PIN, INPUT);
 
-  for (int i = 0; i < READING_VOLTAGE_BUFFER; i++)
-  {
+  for (int i = 0; i < READING_VOLTAGE_BUFFER; i++) {
     voltageReadings[i] = readVoltage();
     totalVoltage += voltageReadings[i];
   }
 }
 
-void voltageCheckAndRestartIfFailed(float *reading, int &failedReadings)
-{
+void voltageCheckAndRestartIfFailed(float *reading, int &failedReadings) {
   printHelper.println("Checking if reading failed");
-  if (reading == nullptr || std::isnan(*reading))
-  {
+  if (reading == nullptr || std::isnan(*reading)) {
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings += 1;
     printHelper.printf("Failed count: %s", String(failedReadings));
-    if (failedReadings >= 10)
-    {
+    if (failedReadings >= 10) {
       ESP.restart();
     }
-  }
-  else
-  {
+  } else {
     printHelper.println("Reading OK");
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings = 0;
   }
 }
 
-void readAndWriteVoltageSensor()
-{
+void readAndWriteVoltageSensor() {
   static unsigned long lastToggleTime = 0;
 
-  if (millis() - lastToggleTime >= READ_VOLTAGE_DELAY)
-  {
+  if (millis() - lastToggleTime >= READ_VOLTAGE_DELAY) {
     int arrayLength = sizeof(voltageReadings) / sizeof(voltageReadings[0]);
 
     lastToggleTime = millis();
