@@ -1,5 +1,7 @@
-#ifndef WIFIHELPER_H
-#define WIFIHELPER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_WIFIHELPER_H_
+#define SRC_WIFIHELPER_H_
 
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
@@ -15,6 +17,8 @@ extern const int EEPROM_SSID_END;
 extern const int EEPROM_SSID_START;
 extern const int WIFI_DELAY;
 extern const int WIFI_TRIES;
+
+const size_t kBufferSize = 256;
 
 DNSServer dnsServer;
 WiFiServer telnetServer(23);
@@ -55,8 +59,7 @@ void setupAP() {
 void handleTelnet() {
   if (telnetServer.hasClient()) {
     if (!serverClient || !serverClient.connected()) {
-      if (serverClient)
-        serverClient.stop();
+      if (serverClient) serverClient.stop();
       serverClient = telnetServer.accept();
     }
   }
@@ -67,7 +70,8 @@ void handleTelnet() {
 
   if (Serial.available()) {
     size_t len = Serial.available();
-    uint8_t sbuf[len];
+    len = (len > kBufferSize) ? kBufferSize : len;
+    uint8_t sbuf[kBufferSize];
     Serial.readBytes(sbuf, len);
     serverClient.write(sbuf, len);
     serverClient.flush();
@@ -76,8 +80,8 @@ void handleTelnet() {
 }
 
 class ResetWiFi {
-public:
-  ResetWiFi(int pin, unsigned long duration)
+ public:
+  ResetWiFi(int pin, uint32_t duration)
       : buttonPin(pin), buttonPressTime(0), pressDuration(duration) {
     pinMode(buttonPin, INPUT_PULLUP);
   }
@@ -104,10 +108,10 @@ public:
     buttonPressTime = 0;
   }
 
-private:
+ private:
   int buttonPin;
-  unsigned long buttonPressTime;
-  unsigned long pressDuration;
+  int32_t buttonPressTime;
+  int32_t pressDuration;
 };
 
-#endif
+#endif  // SRC_WIFIHELPER_H_

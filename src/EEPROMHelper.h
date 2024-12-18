@@ -1,5 +1,7 @@
-#ifndef EEPROMHELPER_H
-#define EEPROMHELPER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_EEPROMHELPER_H_
+#define SRC_EEPROMHELPER_H_
 
 #include <EEPROM.h>
 
@@ -28,7 +30,7 @@ void writeEEPROM(unsigned int start, int end, String data) {
 String readEEPROM(int start, int end) {
   String res = "";
   for (int i = start; i < end; i++) {
-    res += char(EEPROM.read(i));
+    res += static_cast<char>(EEPROM.read(i));
   }
   return res;
 }
@@ -43,4 +45,4 @@ void clearWifiCredentials() {
   ESP.restart();
 }
 
-#endif
+#endif  // SRC_EEPROMHELPER_H_

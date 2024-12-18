@@ -1,11 +1,12 @@
-#ifndef OTAHELPER_H
-#define OTAHELPER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_OTAHELPER_H_
+#define SRC_OTAHELPER_H_
 
 #include <ArduinoOTA.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
-
 
 void onStart() { Serial.println("Start"); }
 
@@ -30,7 +31,7 @@ void onError(ota_error_t error) {
 }
 
 class OTAHelper {
-public:
+ public:
   OTAHelper() {}
 
   void setup() {
@@ -51,4 +52,4 @@ public:
   void loop() { ArduinoOTA.handle(); }
 };
 
-#endif
+#endif  // SRC_OTAHELPER_H_

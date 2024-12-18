@@ -1,5 +1,7 @@
-#ifndef MQTTHELPER_H
-#define MQTTHELPER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_MQTTHELPER_H_
+#define SRC_MQTTHELPER_H_
 
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
@@ -9,7 +11,7 @@
 #include <vector>
 
 #include "PRINTHelper.h"
-#include "liz.h"
+#include "../lib/liz/src/liz.h"
 
 extern String CHIP_ID_STRING;
 extern const char *LIZ_TYPE;
@@ -150,7 +152,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
 
   String payloadStr;
   for (unsigned int i = 0; i < length; i++) {
-    payloadStr += (char)payload[i];
+    payloadStr += static_cast<char>(payload[i]);
   }
   printHelper.println(payloadStr);
 
@@ -253,4 +255,4 @@ void connectToMQTT() {
   }
 }
 
-#endif
+#endif  // SRC_MQTTHELPER_H_

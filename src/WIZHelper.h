@@ -1,8 +1,11 @@
-#ifndef WIZHELPER_H
-#define WIZHELPER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_WIZHELPER_H_
+#define SRC_WIZHELPER_H_
 
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
+
 #include <vector>
 
 #include "MQTTHelper.h"
@@ -138,4 +141,4 @@ void wizSetup() {
                      WiFi.localIP().toString().c_str(), localUdpPort);
 }
 
-#endif
+#endif  // SRC_WIZHELPER_H_

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
 #include <Arduino.h>
 #include <DHT.h>
 #include <DNSServer.h>
@@ -6,10 +8,14 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
+
+#include <cstdint>
 #include <cstring>
 #include <regex>
+#include <string>
 
-
+#include "./arduino_secrets.h"
+#include "./liz.h"
 #include "EEPROMHelper.h"
 #include "MQTTHelper.h"
 #include "OTAHelper.h"
@@ -19,9 +25,6 @@
 #include "WIZHelper.h"
 #include "WebServer.h"
 #include "WiFiHelper.h"
-#include "arduino_secrets.h"
-#include "liz.h"
-
 
 uint32_t chipId = ESP.getChipId();
 String CHIP_ID_STRING = String(chipId, HEX);
@@ -33,8 +36,8 @@ const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
-const char *SENSOR_TYPE = "BME"; // "BME" or "DHT"
-const char *LIZ_TYPE = "sensor"; // "voltmeter" or "sensor"
+const char *SENSOR_TYPE = "BME";  // "BME" or "DHT"
+const char *LIZ_TYPE = "sensor";  // "voltmeter" or "sensor"
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
 const int DNS_PORT = 53;
@@ -122,7 +125,7 @@ void setup() {
 }
 
 void blinkLED(int count) {
-  static unsigned long lastToggleTime = 0;
+  static uint32_t lastToggleTime = 0;
   static int blinkCount = 0;
   static bool ledState = LOW;
 

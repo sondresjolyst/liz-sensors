@@ -1,5 +1,7 @@
-#ifndef VOLTMETERCONTROLLER_H
-#define VOLTMETERCONTROLLER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_VOLTMETERCONTROLLER_H_
+#define SRC_VOLTMETERCONTROLLER_H_
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -12,11 +14,11 @@ extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;
-const int ANALOG_RESOLUTION = 1024;    // 10-bit resolution
-const float ANALOG_VOLTAGE = 3.32;     // Reference voltage for ESP8266 ADC
-const float R1 = 10000.0;              // 10kΩ
-const float R2 = 4700.0;               // 4.7kΩ
-const float CORRECTION_FACTOR = 1.218; // multimeter voltage / voltageMeasured
+const int ANALOG_RESOLUTION = 1024;     // 10-bit resolution
+const float ANALOG_VOLTAGE = 3.32;      // Reference voltage for ESP8266 ADC
+const float R1 = 10000.0;               // 10kΩ
+const float R2 = 4700.0;                // 4.7kΩ
+const float CORRECTION_FACTOR = 1.218;  // multimeter voltage / voltageMeasured
 
 // Corrected constants for exponential correction
 // Constants a and b are calculated based on curve fitting using known points:
@@ -108,13 +110,13 @@ void voltageSensorSetup() {
   }
 }
 
-void voltageCheckAndRestartIfFailed(float *reading, int &failedReadings) {
+void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   printHelper.println("Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
     printHelper.printf("Reading: %s", String(*reading));
     failedReadings += 1;
-    printHelper.printf("Failed count: %s", String(failedReadings));
-    if (failedReadings >= 10) {
+    printHelper.printf("Failed count: %s", String(*failedReadings));
+    if (*failedReadings >= 10) {
       ESP.restart();
     }
   } else {
@@ -125,7 +127,7 @@ void voltageCheckAndRestartIfFailed(float *reading, int &failedReadings) {
 }
 
 void readAndWriteVoltageSensor() {
-  static unsigned long lastToggleTime = 0;
+  static uint32_t lastToggleTime = 0;
 
   if (millis() - lastToggleTime >= READ_VOLTAGE_DELAY) {
     int arrayLength = sizeof(voltageReadings) / sizeof(voltageReadings[0]);
@@ -136,7 +138,7 @@ void readAndWriteVoltageSensor() {
     voltageReadings[readVoltageIndex] = readVoltage();
     totalVoltage += voltageReadings[readVoltageIndex];
 
-    voltageCheckAndRestartIfFailed(&totalVoltage, failedVoltageReadings);
+    voltageCheckAndRestartIfFailed(&totalVoltage, &failedVoltageReadings);
 
     readVoltageIndex = (readVoltageIndex + 1) % arrayLength;
     averageVoltage = totalVoltage / arrayLength;
@@ -165,4 +167,4 @@ void readAndWriteVoltageSensor() {
   }
 }
 
-#endif
+#endif  // SRC_VOLTMETERCONTROLLER_H_

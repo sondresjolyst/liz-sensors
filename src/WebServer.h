@@ -1,5 +1,7 @@
-#ifndef WEBSERVER_H
-#define WEBSERVER_H
+// Copyright (c) 2023-2024 Sondre Sjølyst
+
+#ifndef SRC_WEBSERVER_H_
+#define SRC_WEBSERVER_H_
 
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
@@ -132,4 +134,4 @@ void handleSubmit() {
   }
 }
 
-#endif
+#endif  // SRC_WEBSERVER_H_
