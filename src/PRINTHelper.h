@@ -11,7 +11,7 @@
 extern WiFiClient serverClient;
 
 class PRINTHelper {
- public:
+public:
   explicit PRINTHelper(WiFiClient &client) : _client(client) {}
 
   void print(const String &message) {
@@ -34,8 +34,8 @@ class PRINTHelper {
     _client.println(buf);
   }
 
- private:
+private:
   WiFiClient &_client;
 };
 
-#endif  // SRC_PRINTHELPER_H_
+#endif // SRC_PRINTHELPER_H_

@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "PRINTHelper.h"
 #include "../lib/liz/src/liz.h"
+#include "PRINTHelper.h"
 
 extern String CHIP_ID_STRING;
 extern const char *LIZ_TYPE;
@@ -255,4 +255,4 @@ void connectToMQTT() {
   }
 }
 
-#endif  // SRC_MQTTHELPER_H_
+#endif // SRC_MQTTHELPER_H_

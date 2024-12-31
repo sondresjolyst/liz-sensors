@@ -31,7 +31,7 @@ void onError(ota_error_t error) {
 }
 
 class OTAHelper {
- public:
+public:
   OTAHelper() {}
 
   void setup() {
@@ -52,4 +52,4 @@ class OTAHelper {
   void loop() { ArduinoOTA.handle(); }
 };
 
-#endif  // SRC_OTAHELPER_H_
+#endif // SRC_OTAHELPER_H_

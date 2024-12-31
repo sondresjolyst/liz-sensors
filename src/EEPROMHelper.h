@@ -45,4 +45,4 @@ void clearWifiCredentials() {
   ESP.restart();
 }
 
-#endif  // SRC_EEPROMHELPER_H_
+#endif // SRC_EEPROMHELPER_H_

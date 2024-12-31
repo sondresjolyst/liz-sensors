@@ -174,4 +174,4 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE) {
   }
 }
 
-#endif  // SRC_SENSORCONTROLLER_H_
+#endif // SRC_SENSORCONTROLLER_H_

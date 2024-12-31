@@ -59,7 +59,8 @@ void setupAP() {
 void handleTelnet() {
   if (telnetServer.hasClient()) {
     if (!serverClient || !serverClient.connected()) {
-      if (serverClient) serverClient.stop();
+      if (serverClient)
+        serverClient.stop();
       serverClient = telnetServer.accept();
     }
   }
@@ -80,7 +81,7 @@ void handleTelnet() {
 }
 
 class ResetWiFi {
- public:
+public:
   ResetWiFi(int pin, uint32_t duration)
       : buttonPin(pin), buttonPressTime(0), pressDuration(duration) {
     pinMode(buttonPin, INPUT_PULLUP);
@@ -108,10 +109,10 @@ class ResetWiFi {
     buttonPressTime = 0;
   }
 
- private:
+private:
   int buttonPin;
   int32_t buttonPressTime;
   int32_t pressDuration;
 };
 
-#endif  // SRC_WIFIHELPER_H_
+#endif // SRC_WIFIHELPER_H_
