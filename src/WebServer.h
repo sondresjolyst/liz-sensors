@@ -146,4 +146,4 @@ void handleClearWiFi() {
   clearWifiCredentials();
 }
 
-#endif // SRC_WEBSERVER_H_
+#endif  // SRC_WEBSERVER_H_

@@ -255,4 +255,4 @@ void connectToMQTT() {
   }
 }
 
-#endif // SRC_MQTTHELPER_H_
+#endif  // SRC_MQTTHELPER_H_
