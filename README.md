@@ -4,7 +4,6 @@
 
 ![Liz Sensor Voltmeter](</assets/svg/Liz Sensor Voltmeter.svg>)
 
-
 ### Voltage Divider Calculation for Wemos D1 Mini
 
 To measure a higher voltage than 3.3V using the Wemos D1 Mini's ADC port, you can create a voltage divider with 47kΩ and 4.7kΩ resistors.

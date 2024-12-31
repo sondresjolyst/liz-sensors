@@ -121,6 +121,7 @@ void setup() {
 
   server.on("/", handleRoot);
   server.on("/submit", HTTP_POST, handleSubmit);
+  server.on("/clear-wifi", HTTP_POST, handleClearWiFi);
   server.begin();
 }
 
