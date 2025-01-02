@@ -1,10 +1,21 @@
 # Wemos_D1_Mini_30359b
 
-vinTest: 5.31395, multimeter Voltage: 5.03
-vinTest: 13.16004, multimeter Voltage: 12.62
+vinTest: 5.34961, multimeter Voltage: 5.02
+vinTest: 13.05305, multimeter Voltage: 12.46
 
-b = (ln(12.62) - ln(5.03)) / (ln(13.16004) - ln(5.31395))
-b = 1.01435
+b = (ln(12.46) - ln(5.02)) / (ln(13.05305) - ln(5.34961))
+b = 1.01917
 
-a = exp(ln(5.03) - 1.01435 \* ln(5.31395))
-a = 0.924146
+a = exp(ln(5.02) - b * ln(5.34961))
+a = 0.908698
+
+# Wemos_D1_Mini_6ceb7b
+
+vinTest: 5.31395, multimeter Voltage: 5.02
+vinTest: 12.91039, multimeter Voltage: 12.46 !
+
+b = (ln(12.46) - ln(5.02)) / (ln(12.91039) - ln(5.31395))
+b = 1.0241
+
+a = exp(ln(5.02) - 1.0241 \* ln(5.31395))
+a = 0.90741
