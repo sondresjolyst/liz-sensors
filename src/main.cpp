@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024 Sondre Sjølyst
+// Copyright (c) 2023-2025 Sondre Sjølyst
 
 #include <Arduino.h>
 #include <DHT.h>
@@ -37,7 +37,7 @@ const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
 const char *SENSOR_TYPE = "BME";  // "BME" or "DHT"
-const char *LIZ_TYPE = "sensor";  // "voltmeter" or "sensor"
+const char *LIZ_TYPE = "voltmeter";  // "voltmeter" or "sensor"
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
 const int DNS_PORT = 53;
