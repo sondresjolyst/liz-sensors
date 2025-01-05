@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024 Sondre Sjølyst
+// Copyright (c) 2023-2025 Sondre Sjølyst
 
 #include <Arduino.h>
 #include <DHT.h>

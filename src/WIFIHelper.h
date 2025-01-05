@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024 Sondre Sjølyst
+// Copyright (c) 2023-2025 Sondre Sjølyst
 
 #ifndef SRC_WIFIHELPER_H_
 #define SRC_WIFIHELPER_H_
