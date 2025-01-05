@@ -48,7 +48,7 @@ To estimate the power consumption of the Wemos D1 Mini:
 
 #### Current Draw
 
-Assuming an average current draw of 80mA (0.08A) when performing computations and connected to WiFi.
+Assuming an average current draw of 80mA (0.08A) when performing computations and connected to Wi-Fi.
 
 #### Power Calculation
 
