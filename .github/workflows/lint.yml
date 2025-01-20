@@ -15,7 +15,7 @@ permissions: {}
 jobs:
   lint-codebase:
     name: Lint codebase
-    uses: equinor/ops-actions/.github/workflows/super-linter.yml@21643513a0eb001c43e16a6f15e8dc9bade379ed
+    uses: equinor/ops-actions/.github/workflows/super-linter.yml@4a7305af70c196d18a05ae49b2f7b8646bae8f5e
     permissions:
       contents: read
       statuses: write
@@ -24,7 +24,7 @@ jobs:
 
   lint-pr:
     name: Lint PR
-    uses: equinor/ops-actions/.github/workflows/commitlint.yml@21643513a0eb001c43e16a6f15e8dc9bade379ed
+    uses: equinor/ops-actions/.github/workflows/commitlint.yml@4a7305af70c196d18a05ae49b2f7b8646bae8f5e
     permissions:
       contents: read
     with:
