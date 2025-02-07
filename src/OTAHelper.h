@@ -4,8 +4,8 @@
 #define SRC_OTAHELPER_H_
 
 #include <ArduinoOTA.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <WiFiUdp.h>
 
 void onStart() { Serial.println("Start"); }

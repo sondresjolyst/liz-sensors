@@ -4,9 +4,9 @@
 #include <DHT.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
-#include <ESP8266HTTPClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
+#include <HTTPClient.h>
+#include <WebServer.h>
+#include <WiFi.h>
 #include <Wire.h>
 
 #include <cstdint>
@@ -23,10 +23,18 @@
 #include "SensorController.h"
 #include "VoltmeterController.h"
 #include "WIZHelper.h"
-#include "WebServer.h"
+#include "WebSite.h"
 #include "WiFiHelper.h"
 
-uint32_t chipId = ESP.getChipId();
+#ifndef SENSOR_TYPE
+#define SENSOR_TYPE "BME"
+#endif
+
+#ifndef LIZ_TYPE
+#define LIZ_TYPE "sensor"
+#endif
+
+uint64_t chipId = ESP.getEfuseMac();
 String CHIP_ID_STRING = String(chipId, HEX);
 String MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
 const char *MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
@@ -36,8 +44,8 @@ const uint8_t DHTTYPE = DHT11;
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
-const char *SENSOR_TYPE = "BME";  // "BME" or "DHT"
-const char *LIZ_TYPE = "sensor";  // "voltmeter" or "sensor"
+// const char *SENSOR_TYPE = "BME";  // "BME" or "DHT"
+// const char *LIZ_TYPE = "voltmeter";  // "voltmeter" or "sensor"
 const float TEMP_HUMID_DIFF = 10.0;
 const int DHT_SENSOR_PIN = 2;
 const int DNS_PORT = 53;
@@ -60,7 +68,7 @@ const int runGetPilot_BLINK_DELAY = 2000;
 
 Adafruit_BME280 bme;
 DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
-ESP8266WebServer server(WEBSITE_PORT);
+WebServer server(WEBSITE_PORT);
 ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
 OTAHelper *otaHelper = nullptr;
 PRINTHelper printHelper(serverClient);

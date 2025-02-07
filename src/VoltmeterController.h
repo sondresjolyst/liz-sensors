@@ -15,7 +15,7 @@ extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;
 const int ANALOG_RESOLUTION = 1024;     // 10-bit resolution
-const float ANALOG_VOLTAGE = 3.32;      // Reference voltage for ESP8266 ADC
+const float ANALOG_VOLTAGE = 3.32;      // Reference voltage for ESP32 ADC
 const float R1 = 47000.0;               // 47kΩ
 const float R2 = 4700.0;                // 4.7kΩ
 const float CORRECTION_FACTOR = 1.218;  // multimeter voltage / voltageMeasured
@@ -51,7 +51,7 @@ float totalVoltage = 0;
 int readVoltageIndex = 0;
 
 float currentVoltageReadings = 0;
-int failedVoltageReadings = 0;
+int32_t failedVoltageReadings = 0;
 
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);

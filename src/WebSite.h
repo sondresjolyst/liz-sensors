@@ -1,15 +1,15 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_WEBSERVER_H_
-#define SRC_WEBSERVER_H_
+#ifndef SRC_WEBSITE_H_
+#define SRC_WEBSITE_H_
 
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
+#include <WebServer.h>
+#include <WiFi.h>
 #include <PubSubClient.h>
 
 #include <vector>
 
-extern ESP8266WebServer server;
+extern WebServer server;
 extern WiFiClient serverClient;
 extern PubSubClient client;
 
@@ -44,7 +44,7 @@ void handleRoot() {
   String html = R"(
   <html>
     <head>
-      <title>ESP8266 Config</title>
+      <title>ESP32 Config</title>
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -90,7 +90,7 @@ void handleRoot() {
     </head>
     <body>
       <div class='container'>
-        <h1>ESP8266 Configuration</h1>
+        <h1>ESP32 Configuration</h1>
         <form action='/submit' method='POST'>
           <label for='ssid'>SSID:</label>
           <select id='ssid' name='ssid'>)" +
@@ -111,7 +111,7 @@ void webpage_status() {
   String html = R"(
   <html>
     <body>
-      <h1>ESP8266 Web Server</h1>
+      <h1>ESP32 Web Server</h1>
       <p>MQTT Connectivity: )";
   html += (client.connected()) ? "Connected" : "Disconnected";
   html += R"(
@@ -146,4 +146,4 @@ void handleClearWiFi() {
   clearWifiCredentials();
 }
 
-#endif  // SRC_WEBSERVER_H_
+#endif  // SRC_WEBSITE_H_

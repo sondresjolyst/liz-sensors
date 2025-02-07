@@ -4,7 +4,7 @@
 #define SRC_MQTTHELPER_H_
 
 #include <ArduinoJson.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <PubSubClient.h>
 #include <regex>
 #include <string>
@@ -14,7 +14,7 @@
 #include "PRINTHelper.h"
 
 extern String CHIP_ID_STRING;
-extern const char *LIZ_TYPE;
+// extern const char *LIZ_TYPE;
 extern String MQTT_STATETOPIC;
 extern const char *MQTT_BROKER;
 extern const char *MQTT_HOSTNAME;
@@ -74,7 +74,7 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
 
 void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
   String discoveryTopic =
-      "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "voltage/config";
+      "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_voltage/config";
 
   DynamicJsonDocument doc(1024);
   char buffer[512];

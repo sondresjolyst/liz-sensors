@@ -43,9 +43,9 @@ float currentHumidReadings = 0;
 int32_t failedTempReadings = 0;
 int32_t failedHumidReadings = 0;
 
-void environmentalSensorSetup(const char *SENSOR_TYPE) {
-  if (strcmp(SENSOR_TYPE, "DHT") == 0) {
-    Serial.printf("Sensor type is: %s\n", SENSOR_TYPE);
+void environmentalSensorSetup(const char *sensorType) {
+  if (strcmp(sensorType, "DHT") == 0) {
+    Serial.printf("Sensor type is: %s\n", sensorType);
     dht.begin();
 
     for (int i = 0; i < READING_BUFFER; i++) {
@@ -54,8 +54,8 @@ void environmentalSensorSetup(const char *SENSOR_TYPE) {
       totalTemp += tempReadings[i];
       totalHumid += humidReadings[i];
     }
-  } else if (strcmp(SENSOR_TYPE, "BME") == 0) {
-    Serial.printf("Sensor type is: %s\n", SENSOR_TYPE);
+  } else if (strcmp(sensorType, "BME") == 0) {
+    Serial.printf("Sensor type is: %s\n", sensorType);
     Wire.begin();
     if (!bme.begin(0x76)) {
       Serial.println("Could not find a valid BME280 sensor, check wiring!");
@@ -89,7 +89,7 @@ void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   }
 }
 
-void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE) {
+void readAndWriteEnvironmentalSensors(const char *sensorType) {
   static uint32_t lastToggleTime = 0;
 
   if (millis() - lastToggleTime >= READ_DELAY) {
@@ -100,14 +100,14 @@ void readAndWriteEnvironmentalSensors(const char *SENSOR_TYPE) {
     totalTemp -= tempReadings[readIndex];
     totalHumid -= humidReadings[readIndex];
 
-    if (strcmp(SENSOR_TYPE, "DHT") == 0) {
+    if (strcmp(sensorType, "DHT") == 0) {
       currentTempReadings = dht.readTemperature();
       currentHumidReadings = dht.readHumidity();
 
       tempReadings[readIndex] = currentTempReadings + DHTtempOffset;
       humidReadings[readIndex] = currentHumidReadings + DHThumidOffset;
     }
-    if (strcmp(SENSOR_TYPE, "BME") == 0) {
+    if (strcmp(sensorType, "BME") == 0) {
       currentTempReadings = bme.readTemperature();
       currentHumidReadings = bme.readHumidity();
 

@@ -4,8 +4,8 @@
 #define SRC_WIFIHELPER_H_
 
 #include <DNSServer.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 
 #include "EEPROMHelper.h"
 
@@ -75,7 +75,7 @@ void handleTelnet() {
     uint8_t sbuf[kBufferSize];
     Serial.readBytes(sbuf, len);
     serverClient.write(sbuf, len);
-    serverClient.flush();
+    serverClient.clear();
     delay(1);
   }
 }
