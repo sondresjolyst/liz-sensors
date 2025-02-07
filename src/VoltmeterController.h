@@ -14,10 +14,10 @@ extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;
-const int ANALOG_RESOLUTION = 1024;     // 10-bit resolution
+const int ANALOG_RESOLUTION = 4096;     // 10-bit resolution
 const float ANALOG_VOLTAGE = 3.32;      // Reference voltage for ESP32 ADC
-const float R1 = 47000.0;               // 47kΩ
-const float R2 = 4700.0;                // 4.7kΩ
+const float R1 = 33000.0;               // 47kΩ
+const float R2 = 10000.0;                // 4.7kΩ
 const float CORRECTION_FACTOR = 1.218;  // multimeter voltage / voltageMeasured
 
 // Corrected constants for exponential correction
