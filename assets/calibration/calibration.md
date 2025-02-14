@@ -21,3 +21,14 @@ b = 1.0273
 
 a = exp(ln(5.02) - b \* ln(5.31395))
 a = 0.902573
+
+## Wemos_D1_Mini_5fa85b
+
+vinTest: 5.31395, multimeter Voltage: 5.02
+vinTest: 13.48102, multimeter Voltage: 13.05
+
+b = (ln(13.05) - ln(5.02)) / (ln(13.48102) - ln(5.31395))
+b = 1.02622
+
+a = exp(ln(5.02) - 1.02622 * ln(5.31395))
+a = 0.904203
