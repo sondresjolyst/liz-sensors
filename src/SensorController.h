@@ -56,7 +56,7 @@ void environmentalSensorSetup(const char *sensorType) {
     }
   } else if (strcmp(sensorType, "BME") == 0) {
     Serial.printf("Sensor type is: %s\n", sensorType);
-    Wire.begin();
+    Wire.begin(18, 17);
     if (!bme.begin(0x76)) {
       Serial.println("Could not find a valid BME280 sensor, check wiring!");
       while (1) {
