@@ -162,16 +162,21 @@ void blinkLED(int count) {
   }
 }
 
+// Filter out "SOCKET" or "SHRGBC"
 bool isWizDevice(const std::string &moduleName) {
   return moduleName.find("SOCKET") != std::string::npos ||
          moduleName.find("SHRGBC") != std::string::npos;
 }
 
 void discoverAndSubscribe() {
+  // Get the current discoveredDevices
   auto oldDiscoveredDevices = liz::getDiscoveredDevices();
+  // Discover devices
   auto discoveredDevices = liz::discover(port, 60000);
 
+  // Only subscribe if a new device has been discovered
   for (const auto &device : discoveredDevices) {
+    // Check if the device is not in oldDiscoveredDevices
     if (std::find(oldDiscoveredDevices.begin(), oldDiscoveredDevices.end(),
                   device) == oldDiscoveredDevices.end()) {
       std::string deviceIP = std::get<0>(device);
