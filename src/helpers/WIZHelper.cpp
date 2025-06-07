@@ -4,7 +4,6 @@
 #include "MQTTHelper.h"
 #include "PRINTHelper.h"
 
-static constexpr unsigned int localUdpPort = 38899;
 WiFiUDP Udp;
 
 extern PRINTHelper printHelper;

@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 
-extern unsigned int localUdpPort;
+constexpr unsigned int localUdpPort = 38899;
 extern WiFiUDP Udp;
 
 void wizSetup();
