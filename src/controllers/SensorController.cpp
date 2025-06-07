@@ -2,6 +2,14 @@
 
 #include "SensorController.h"
 
+#ifndef I2C_SDA_PIN
+#define I2C_SDA_PIN 18
+#endif
+
+#ifndef I2C_SCL_PIN
+#define I2C_SCL_PIN 17
+#endif
+
 float BMEtempOffset = -3.49;
 float BMEhumidOffset = 15;
 
@@ -34,7 +42,7 @@ void environmentalSensorSetup(const char *sensorType) {
     }
   } else if (strcmp(sensorType, "BME") == 0) {
     Serial.printf("Sensor type is: %s\n", sensorType);
-    Wire.begin(18, 17);
+    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     if (!bme.begin(0x76)) {
       Serial.println("Could not find a valid BME280 sensor, check wiring!");
       while (1) {
