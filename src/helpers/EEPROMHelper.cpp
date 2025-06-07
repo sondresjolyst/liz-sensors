@@ -1,14 +1,8 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_EEPROMHELPER_H_
-#define SRC_EEPROMHELPER_H_
-
 #include <EEPROM.h>
 
-extern const int EEPROM_SSID_START;
-extern const int EEPROM_SSID_END;
-extern const int EEPROM_PASSWORD_START;
-extern const int EEPROM_PASSWORD_END;
+#include "EEPROMHelper.h"
 
 void writeEEPROM(unsigned int start, int end, String data) {
   unsigned int size = end - start;
@@ -29,7 +23,7 @@ void writeEEPROM(unsigned int start, int end, String data) {
 
 String readEEPROM(int start, int end) {
   String res = "";
-  for (int i = start; i < end; i++) {
+  for (int i = start; i <= end; i++) {
     res += static_cast<char>(EEPROM.read(i));
   }
   return res;
@@ -44,5 +38,3 @@ void clearWifiCredentials() {
   Serial.println("Restarting ESP...");
   ESP.restart();
 }
-
-#endif  // SRC_EEPROMHELPER_H_

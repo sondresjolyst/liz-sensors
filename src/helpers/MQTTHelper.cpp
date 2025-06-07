@@ -1,30 +1,9 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_MQTTHELPER_H_
-#define SRC_MQTTHELPER_H_
-
-#include <ArduinoJson.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <regex>
 #include <string>
-#include <vector>
 
-#include "../lib/liz/src/liz.h"
-#include "PRINTHelper.h"
+#include "MQTTHelper.h"
 
-extern String CHIP_ID_STRING;
-// extern const char *LIZ_TYPE;
-extern String MQTT_STATETOPIC;
-extern const char *MQTT_BROKER;
-extern const char *MQTT_HOSTNAME;
-extern const char *MQTT_PASS;
-extern const char *MQTT_USER;
-extern const int MQTT_PORT;
-extern const int port;
-
-extern std::vector<std::pair<String, String>> discoveredDevices;
-extern PRINTHelper printHelper;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -124,9 +103,6 @@ void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
   printHelper.println(buffer);
 
   client.publish(discoveryTopic.c_str(), buffer, n);
-
-  // std::string stateTopic = "home/storage/" + deviceName + "/set";
-  // client.subscribe(stateTopic.c_str());
 }
 
 void publishWizState(String deviceName, bool lightState) {
@@ -186,8 +162,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     liz::setPilot(deviceIP.c_str(), port, false);
   }
 
-  // delay(2000);
-
   auto response = liz::getPilot(deviceIP.c_str(), port);
   if (response) {
     printHelper.println(response->c_str());
@@ -198,8 +172,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     if (error) {
       printHelper.println("Failed to parse JSON response");
     } else {
-      // std::string deviceMac = doc["result"]["mac"];
-      // std::string moduleName = doc["result"]["moduleName"];
       bool state = doc["result"]["state"];
 
       // Filter out "SOCKET" or "SHRGBC"
@@ -254,5 +226,3 @@ void connectToMQTT() {
     }
   }
 }
-
-#endif  // SRC_MQTTHELPER_H_

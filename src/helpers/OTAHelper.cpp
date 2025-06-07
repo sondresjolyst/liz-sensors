@@ -1,12 +1,11 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_OTAHELPER_H_
-#define SRC_OTAHELPER_H_
-
 #include <ArduinoOTA.h>
-#include <WiFi.h>
 #include <ESPmDNS.h>
+#include <WiFi.h>
 #include <WiFiUdp.h>
+
+#include "OTAHelper.h"
 
 void onStart() { Serial.println("Start"); }
 
@@ -30,26 +29,21 @@ void onError(ota_error_t error) {
     Serial.println("End Failed");
 }
 
-class OTAHelper {
- public:
-  OTAHelper() {}
+OTAHelper::OTAHelper() {}
 
-  void setup() {
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("Error: No WiFi connection when setting up OTAHelper");
-      return;
-    }
-
-    ArduinoOTA.onStart(onStart);
-    ArduinoOTA.onEnd(onEnd);
-    ArduinoOTA.onProgress(onProgress);
-    ArduinoOTA.onError(onError);
-
-    ArduinoOTA.begin();
-    Serial.println("OTA is ready");
+void OTAHelper::setup() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Error: No WiFi connection when setting up OTAHelper");
+    return;
   }
 
-  void loop() { ArduinoOTA.handle(); }
-};
+  ArduinoOTA.onStart(onStart);
+  ArduinoOTA.onEnd(onEnd);
+  ArduinoOTA.onProgress(onProgress);
+  ArduinoOTA.onError(onError);
 
-#endif  // SRC_OTAHELPER_H_
+  ArduinoOTA.begin();
+  Serial.println("OTA is ready");
+}
+
+void OTAHelper::loop() { ArduinoOTA.handle(); }
