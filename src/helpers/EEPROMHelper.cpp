@@ -1,7 +1,8 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#include "EEPROMHelper.h"
 #include <EEPROM.h>
+
+#include "EEPROMHelper.h"
 
 void writeEEPROM(unsigned int start, int end, String data) {
   unsigned int size = end - start;
@@ -22,7 +23,7 @@ void writeEEPROM(unsigned int start, int end, String data) {
 
 String readEEPROM(int start, int end) {
   String res = "";
-  for (int i = start; i < end; i++) {
+  for (int i = start; i <= end; i++) {
     res += static_cast<char>(EEPROM.read(i));
   }
   return res;

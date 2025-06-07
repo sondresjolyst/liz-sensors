@@ -1,19 +1,17 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_WEBSITE_H_
-#define SRC_WEBSITE_H_
-
+#include <PubSubClient.h>
 #include <WebServer.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
 
 #include <vector>
+
+#include "WebSite.h"
+#include "helpers/EEPROMHelper.h"
 
 extern WebServer server;
 extern WiFiClient serverClient;
 extern PubSubClient client;
-
-const char *html = "<html>...</html>";
 
 String getWifiOptions() {
   int n = WiFi.scanNetworks();
@@ -145,5 +143,3 @@ void handleClearWiFi() {
   delay(1000);
   clearWifiCredentials();
 }
-
-#endif  // SRC_WEBSITE_H_

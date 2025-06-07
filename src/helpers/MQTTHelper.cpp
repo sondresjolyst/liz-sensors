@@ -1,7 +1,8 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#include "MQTTHelper.h"
 #include <string>
+
+#include "MQTTHelper.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);

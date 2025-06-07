@@ -14,17 +14,17 @@
 #include <regex>
 #include <string>
 
-#include "./arduino_secrets.h"
+#include "./config/arduino_secrets.h"
 #include "./liz.h"
-#include "EEPROMHelper.h"
-#include "MQTTHelper.h"
-#include "OTAHelper.h"
-#include "PRINTHelper.h"
-#include "SensorController.h"
-#include "VoltmeterController.h"
-#include "WIZHelper.h"
-#include "WebSite.h"
-#include "WiFiHelper.h"
+#include "controllers/SensorController.h"
+#include "controllers/VoltmeterController.h"
+#include "helpers/EEPROMHelper.h"
+#include "helpers/MQTTHelper.h"
+#include "helpers/OTAHelper.h"
+#include "helpers/PRINTHelper.h"
+#include "helpers/WIZHelper.h"
+#include "helpers/WiFiHelper.h"
+#include "web/WebSite.h"
 
 #ifndef SENSOR_TYPE
 #define SENSOR_TYPE "BME"  // "BME" or "DHT"
@@ -63,7 +63,8 @@ DHT dht(DHT_SENSOR_PIN, DHTTYPE, 11);
 WebServer server(WEBSITE_PORT);
 ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
 OTAHelper *otaHelper = nullptr;
-PRINTHelper printHelper(serverClient);
+WiFiClient serverClient;
+PRINTHelper printHelper(&serverClient);
 
 String CHIP_ID_STRING;
 String MQTT_HOSTNAME_STRING;
@@ -89,7 +90,6 @@ void setup() {
   delay(10);
 
   pinMode(LED_BUILTIN, OUTPUT);
-
   Serial.println("Starting...");
   Serial.println("Reading EEPROM...");
 
@@ -214,6 +214,5 @@ void loop() {
   } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
     readAndWriteVoltageSensor();
   }
-  // runGetPilot();
   discoverAndSubscribe();
 }

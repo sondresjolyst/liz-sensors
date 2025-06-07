@@ -1,7 +1,7 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_EEPROMHELPER_H_
-#define SRC_EEPROMHELPER_H_
+#ifndef SRC_HELPERS_EEPROMHELPER_H_
+#define SRC_HELPERS_EEPROMHELPER_H_
 
 #include <Arduino.h>
 
@@ -14,4 +14,4 @@ void writeEEPROM(unsigned int start, int end, String data);
 String readEEPROM(int start, int end);
 void clearWifiCredentials();
 
-#endif  // SRC_EEPROMHELPER_H_
+#endif  // SRC_HELPERS_EEPROMHELPER_H_

@@ -1,26 +1,6 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_SENSORCONTROLLER_H_
-#define SRC_SENSORCONTROLLER_H_
-
-#include <Adafruit_BME280.h>
-#include <Adafruit_Sensor.h>
-#include <ArduinoJson.h>
-#include <DHT.h>
-#include <PubSubClient.h>
-#include <Wire.h>
-
-#include <cmath>
-#include <cstdint>
-
-#include "PRINTHelper.h"
-
-extern DHT dht;
-extern Adafruit_BME280 bme;
-extern WiFiClient serverClient;
-extern PubSubClient client;
-extern String MQTT_STATETOPIC;
-extern PRINTHelper printHelper;
+#include "SensorController.h"
 
 float BMEtempOffset = -3.49;
 float BMEhumidOffset = 15;
@@ -28,8 +8,6 @@ float BMEhumidOffset = 15;
 float DHTtempOffset = -3;
 float DHThumidOffset = 6;
 
-const int READ_DELAY = 60000;
-const int READING_BUFFER = 5;
 float averageHumid = 0;
 float averageTemp = 0;
 float humidReadings[READING_BUFFER];
@@ -77,7 +55,7 @@ void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   printHelper.println("Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
     printHelper.printf("Reading: %s", String(*reading));
-    failedReadings += 1;
+    (*failedReadings) += 1;
     printHelper.printf("Failed count: %s", String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
@@ -85,7 +63,7 @@ void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   } else {
     printHelper.println("Reading OK");
     printHelper.printf("Reading: %s", String(*reading));
-    failedReadings = 0;
+    *failedReadings = 0;
   }
 }
 
@@ -173,5 +151,3 @@ void readAndWriteEnvironmentalSensors(const char *sensorType) {
     printHelper.println(String(averageHumid));
   }
 }
-
-#endif  // SRC_SENSORCONTROLLER_H_

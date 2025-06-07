@@ -1,28 +1,11 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_WIFIHELPER_H_
-#define SRC_WIFIHELPER_H_
+#include <WebServer.h>
 
-#include <DNSServer.h>
-#include <WiFi.h>
-#include <ESPmDNS.h>
-
-#include "EEPROMHelper.h"
-
-extern String WIFI_NAME;
-extern const int DNS_PORT;
-extern const int EEPROM_PASSWORD_END;
-extern const int EEPROM_PASSWORD_START;
-extern const int EEPROM_SSID_END;
-extern const int EEPROM_SSID_START;
-extern const int WIFI_DELAY;
-extern const int WIFI_TRIES;
-
-const size_t kBufferSize = 256;
+#include "WIFIHelper.h"
 
 DNSServer dnsServer;
 WiFiServer telnetServer(23);
-WiFiClient serverClient;
 
 bool connectWifi(String ssid, String password) {
   WiFi.begin(ssid.c_str(), password.c_str());
@@ -80,39 +63,29 @@ void handleTelnet() {
   }
 }
 
-class ResetWiFi {
- public:
-  ResetWiFi(int pin, uint32_t duration)
-      : buttonPin(pin), buttonPressTime(0), pressDuration(duration) {
-    pinMode(buttonPin, INPUT_PULLUP);
-  }
+ResetWiFi::ResetWiFi(int pin, uint32_t duration)
+    : buttonPin(pin), buttonPressTime(0), pressDuration(duration) {
+  pinMode(buttonPin, INPUT_PULLUP);
+}
 
-  void update() {
-    int buttonState = digitalRead(buttonPin);
-    if (buttonState == HIGH) {
-      buttonPressTime = 0;
-      return;
-    }
-
-    if (buttonPressTime == 0) {
-      Serial.print("Pressed!");
-      buttonPressTime = millis();
-      return;
-    }
-    Serial.println("");
-    Serial.println(millis() - buttonPressTime);
-    if ((millis() - buttonPressTime) <= pressDuration) {
-      return;
-    }
-
-    clearWifiCredentials();
+void ResetWiFi::update() {
+  int buttonState = digitalRead(buttonPin);
+  if (buttonState == HIGH) {
     buttonPressTime = 0;
+    return;
   }
 
- private:
-  int buttonPin;
-  int32_t buttonPressTime;
-  int32_t pressDuration;
-};
+  if (buttonPressTime == 0) {
+    Serial.print("Pressed!");
+    buttonPressTime = millis();
+    return;
+  }
+  Serial.println("");
+  Serial.println(millis() - buttonPressTime);
+  if ((millis() - buttonPressTime) <= pressDuration) {
+    return;
+  }
 
-#endif  // SRC_WIFIHELPER_H_
+  clearWifiCredentials();
+  buttonPressTime = 0;
+}

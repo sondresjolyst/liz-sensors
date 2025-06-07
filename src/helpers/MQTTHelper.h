@@ -1,15 +1,15 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#ifndef SRC_MQTTHELPER_H_
-#define SRC_MQTTHELPER_H_
+#ifndef SRC_HELPERS_MQTTHELPER_H_
+#define SRC_HELPERS_MQTTHELPER_H_
 
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+
 #include <regex>
 #include <string>
 #include <vector>
-
 
 #include "../lib/liz/src/liz.h"
 #include "PRINTHelper.h"
@@ -38,4 +38,4 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 bool mqttStatus();
 void connectToMQTT();
 
-#endif  // SRC_MQTTHELPER_H_
+#endif  // SRC_HELPERS_MQTTHELPER_H_
