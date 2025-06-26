@@ -8,6 +8,9 @@ class OTAHelper {
   OTAHelper();
   void setup();
   void loop();
+  void checkAndUpdateFromManifest(const char *manifestUrl,
+                                  const char *deviceName,
+                                  const char *currentVersion);
 };
 
 #endif  // SRC_HELPERS_OTAHELPER_H_

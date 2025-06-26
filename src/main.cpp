@@ -73,11 +73,55 @@ const char *MQTT_HOSTNAME = nullptr;
 String MQTT_STATETOPIC;
 String WIFI_NAME;
 
+String toLowerFunc(const char *s) {
+  String tmp = String(s);
+  tmp.toLowerCase();
+  return tmp;
+}
+
+String productNameLower = toLowerFunc(PRODUCER_NAME);
+String lizTypeLower = toLowerFunc(LIZ_TYPE);
+String sensorTypeLower = toLowerFunc(SENSOR_TYPE);
+const String OTA_PRODUCT_NAME =
+    productNameLower + "_" + lizTypeLower + "_" + sensorTypeLower;
+
 void gargeSetupAP() {
   Serial.println("Setting up Access Point...");
   setupAP();
   Serial.println("Access Point started");
   isAPMode = true;
+}
+
+void setupTime() {
+  configTime(0, 0, "pool.ntp.org");
+  Serial.print("Waiting for NTP time sync...");
+  time_t now = time(nullptr);
+  int64_t start = millis();
+  const int64_t timeout = 10000;  // 10 seconds
+
+  while ((now < 8 * 3600 * 2) && (millis() - start < timeout)) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println(
+          "\nWiFi disconnected during NTP sync. Aborting time setup.");
+      return;
+    }
+  }
+  if (now < 8 * 3600 * 2) {
+    Serial.println("\nNTP sync timeout. Time not set.");
+  } else {
+    Serial.println(" done!");
+  }
+}
+
+bool isNightTime() {
+  time_t now = time(nullptr);
+  struct tm timeinfo;
+  localtime_r(&now, &timeinfo);
+  int hour = timeinfo.tm_hour;
+  return (hour >= 2 && hour < 4);
 }
 
 void setup() {
@@ -123,6 +167,8 @@ void setup() {
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
+    setupTime();
+
     connectToMQTT();
     if (strcmp(LIZ_TYPE, "sensor") == 0) {
       environmentalSensorSetup(SENSOR_TYPE);
@@ -140,6 +186,10 @@ void setup() {
 
     otaHelper = new OTAHelper();
     otaHelper->setup();
+
+    otaHelper->checkAndUpdateFromManifest(OTA_MANIFEST_URL,
+                                          OTA_PRODUCT_NAME.c_str(), VERSION);
+
     wizSetup();
   } else {
     gargeSetupAP();
@@ -148,6 +198,8 @@ void setup() {
   server.on("/submit", HTTP_POST, handleSubmit);
   server.on("/clear-wifi", HTTP_POST, handleClearWiFi);
   server.begin();
+
+  Serial.println(OTA_PRODUCT_NAME + " " + VERSION + " started");
 }
 
 void blinkLED(int count) {
@@ -228,6 +280,17 @@ void loop() {
 
   if (otaHelper != nullptr) {
     otaHelper->loop();
+  }
+
+  static int64_t lastOtaCheck = 0;
+  const int64_t otaCheckInterval = 60UL * 60UL * 1000UL;  // 1 hour
+
+  if (millis() - lastOtaCheck > otaCheckInterval) {
+    lastOtaCheck = millis();
+    if (isNightTime()) {
+      otaHelper->checkAndUpdateFromManifest(OTA_MANIFEST_URL,
+                                            OTA_PRODUCT_NAME.c_str(), VERSION);
+    }
   }
 
   handleTelnet();
