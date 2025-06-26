@@ -38,6 +38,7 @@ const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
 const int MQTT_PORT = SECRET_MQTTPORT;
+bool isAPMode = false;
 
 constexpr uint8_t DHTTYPE = DHT11;
 constexpr float TEMP_HUMID_DIFF = 10.0;
@@ -72,6 +73,13 @@ const char *MQTT_HOSTNAME = nullptr;
 String MQTT_STATETOPIC;
 String WIFI_NAME;
 
+void gargeSetupAP() {
+  Serial.println("Setting up Access Point...");
+  setupAP();
+  Serial.println("Access Point started");
+  isAPMode = true;
+}
+
 void setup() {
   Serial.begin(SERIAL_PORT);
   delay(100);
@@ -81,7 +89,7 @@ void setup() {
   MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
   MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
   MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
-  WIFI_NAME = "Liz Sensor " + String(MQTT_HOSTNAME);
+  WIFI_NAME = "Garge " + String(CHIP_ID_STRING);
 
   Serial.println("Disconnecting WiFi");
   WiFi.disconnect();
@@ -101,7 +109,7 @@ void setup() {
       std::all_of(EEPROM_SSID.begin(), EEPROM_SSID.end(),
                   [](char c) { return c == static_cast<char>(0xFF); })) {
     Serial.println("SSID not found or invalid in EEPROM. Starting AP...");
-    setupAP();
+    gargeSetupAP();
     server.on("/", handleRoot);
     server.on("/submit", HTTP_POST, handleSubmit);
     server.on("/clear-wifi", HTTP_POST, handleClearWiFi);
@@ -134,7 +142,7 @@ void setup() {
     otaHelper->setup();
     wizSetup();
   } else {
-    setupAP();
+    gargeSetupAP();
     server.on("/", handleRoot);  // Setup page handler
   }
   server.on("/submit", HTTP_POST, handleSubmit);
@@ -195,7 +203,20 @@ void discoverAndSubscribe() {
 }
 
 void loop() {
-  if ((WiFi.status() != WL_CONNECTED)) {
+  if (isAPMode) {
+    server.handleClient();
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    static int16_t lastAttempt = 0;
+    if (millis() - lastAttempt > 5000) {
+      Serial.println("WiFi lost, attempting reconnect...");
+      String EEPROM_SSID = readEEPROM(EEPROM_SSID_START, EEPROM_SSID_END);
+      String EEPROM_PASSWORD =
+          readEEPROM(EEPROM_PASSWORD_START, EEPROM_PASSWORD_END);
+      connectWifi(EEPROM_SSID, EEPROM_PASSWORD);
+      lastAttempt = millis();
+    }
     server.handleClient();
     return;
   }

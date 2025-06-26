@@ -42,7 +42,7 @@ void handleRoot() {
   String html = R"(
   <html>
     <head>
-      <title>ESP32 Config</title>
+      <title>Garge Config</title>
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -88,7 +88,7 @@ void handleRoot() {
     </head>
     <body>
       <div class='container'>
-        <h1>ESP32 Configuration</h1>
+        <h1>Garge Configuration</h1>
         <form action='/submit' method='POST'>
           <label for='ssid'>SSID:</label>
           <select id='ssid' name='ssid'>)" +
@@ -109,7 +109,7 @@ void webpage_status() {
   String html = R"(
   <html>
     <body>
-      <h1>ESP32 Web Server</h1>
+      <h1>Garge Web Server</h1>
       <p>MQTT Connectivity: )";
   html += (client.connected()) ? "Connected" : "Disconnected";
   html += R"(
