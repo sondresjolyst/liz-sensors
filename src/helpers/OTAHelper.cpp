@@ -1,7 +1,10 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
+#include <ArduinoJson.h>
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
+#include <Update.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
@@ -47,3 +50,80 @@ void OTAHelper::setup() {
 }
 
 void OTAHelper::loop() { ArduinoOTA.handle(); }
+
+void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
+                                           const char *deviceName,
+                                           const char *currentVersion) {
+  HTTPClient http;
+  http.begin(manifestUrl);
+  int httpCode = http.GET();
+  if (httpCode != 200) {
+    Serial.printf("Failed to fetch manifest: %d\n", httpCode);
+    http.end();
+    return;
+  }
+
+  String payload = http.getString();
+  http.end();
+
+  DynamicJsonDocument doc(4096);
+  DeserializationError err = deserializeJson(doc, payload);
+  if (err) {
+    Serial.println("Failed to parse manifest JSON");
+    return;
+  }
+
+  const char *version = nullptr;
+  const char *bin_url = nullptr;
+  bool found = false;
+
+  for (JsonObject entry : doc.as<JsonArray>()) {
+    const char *name = entry["name"];
+    if (name && strcmp(name, deviceName) == 0) {
+      version = entry["version"];
+      bin_url = entry["bin_url"];
+      found = true;
+      break;
+    }
+  }
+
+  if (!found || !version || !bin_url) {
+    Serial.println("No matching device or missing fields in manifest");
+    return;
+  }
+
+  if (strcmp(version, currentVersion) == 0) {
+    Serial.println("Already up to date");
+    return;
+  }
+
+  Serial.printf("New version available: %s\n", version);
+  Serial.println("Starting OTA update...");
+
+  http.begin(bin_url);
+  int binCode = http.GET();
+  if (binCode != 200) {
+    Serial.printf("Failed to fetch bin: %d\n", binCode);
+    http.end();
+    return;
+  }
+
+  int contentLength = http.getSize();
+  bool canBegin = Update.begin(contentLength);
+  if (!canBegin) {
+    Serial.println("Not enough space for OTA");
+    http.end();
+    return;
+  }
+
+  WiFiClient *stream = http.getStreamPtr();
+  size_t written = Update.writeStream(*stream);
+
+  if (written == contentLength && Update.end()) {
+    Serial.println("OTA Success! Rebooting...");
+    ESP.restart();
+  } else {
+    Serial.println("OTA Failed!");
+  }
+  http.end();
+}
