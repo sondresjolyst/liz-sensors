@@ -86,9 +86,7 @@ const String OTA_PRODUCT_NAME =
     productNameLower + "_" + lizTypeLower + "_" + sensorTypeLower;
 
 void gargeSetupAP() {
-  Serial.println("Setting up Access Point...");
   setupAP();
-  Serial.println("Access Point started");
   isAPMode = true;
 }
 
@@ -257,8 +255,18 @@ void discoverAndSubscribe() {
 void loop() {
   if (isAPMode) {
     server.handleClient();
+    // Restart after 30 minutes in AP mode
+    static uint32_t apStartTime = 0;
+    if (apStartTime == 0) {
+      apStartTime = millis();
+    }
+    if (millis() - apStartTime > 30UL * 60UL * 1000UL) {  // 30 minutes
+      Serial.println("Restarting after 30 minutes in AP mode");
+      ESP.restart();
+    }
     return;
   }
+
   if (WiFi.status() != WL_CONNECTED) {
     static int16_t lastAttempt = 0;
     if (millis() - lastAttempt > 5000) {

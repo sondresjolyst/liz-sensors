@@ -30,7 +30,7 @@ void handleNotFound() {
 }
 
 void setupAP() {
-  Serial.println("Starting AP...");
+  Serial.println("Setting up Access Point...");
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI_NAME);
   dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
