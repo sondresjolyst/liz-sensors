@@ -37,6 +37,17 @@
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
 const char *MQTT_PASS = SECRET_MQTTPASS;
 const char *MQTT_USER = SECRET_MQTTUSER;
+const char *SENSOR_TYPE = "BME";  // "BME" or "DHT"
+const char *LIZ_TYPE = "voltmeter";  // "voltmeter" or "sensor"
+const float TEMP_HUMID_DIFF = 10.0;
+const int DHT_SENSOR_PIN = 2;
+const int DNS_PORT = 53;
+const int EEPROM_PASSWORD_END = 96;
+const int EEPROM_PASSWORD_START = 32;
+const int EEPROM_SSID_END = 31;
+const int EEPROM_SSID_START = 0;
+const int LED_BLINK_COUNT = 10;
+const int LED_BLINK_DELAY = 1000;
 const int MQTT_PORT = SECRET_MQTTPORT;
 bool isAPMode = false;
 
