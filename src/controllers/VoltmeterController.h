@@ -46,6 +46,10 @@ const float b = 1.02092;
 const int READ_VOLTAGE_DELAY = 60000;
 const int READING_VOLTAGE_BUFFER = 5;
 
+// Deep sleep interval for voltmeter (in microseconds)
+constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US =
+    3600ULL * 1000000ULL;  // 1 hour
+
 extern float averageVoltage;
 extern float voltageReadings[READING_VOLTAGE_BUFFER];
 extern float totalVoltage;

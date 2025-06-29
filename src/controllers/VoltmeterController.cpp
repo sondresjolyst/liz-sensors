@@ -1,14 +1,16 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
 #include "VoltmeterController.h"
+#include <esp_sleep.h>
 
-float averageVoltage = 0;
-float voltageReadings[READING_VOLTAGE_BUFFER];
-float totalVoltage = 0;
-int readVoltageIndex = 0;
+RTC_DATA_ATTR float averageVoltage = 0;
+RTC_DATA_ATTR float voltageReadings[READING_VOLTAGE_BUFFER];
+RTC_DATA_ATTR float totalVoltage = 0;
+RTC_DATA_ATTR int readVoltageIndex = 0;
+RTC_DATA_ATTR bool bufferFilled = false;
 
 float currentVoltageReadings = 0;
-int32_t failedVoltageReadings = 0;
+RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
 
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
@@ -65,9 +67,13 @@ float readVoltage() {
 void voltageSensorSetup() {
   pinMode(ANALOG_IN_PIN, INPUT);
 
-  for (int i = 0; i < READING_VOLTAGE_BUFFER; i++) {
-    voltageReadings[i] = readVoltage();
-    totalVoltage += voltageReadings[i];
+  if (!bufferFilled) {
+    totalVoltage = 0;
+    for (int i = 0; i < READING_VOLTAGE_BUFFER; i++) {
+      voltageReadings[i] = readVoltage();
+      totalVoltage += voltageReadings[i];
+    }
+    bufferFilled = true;
   }
 }
 
@@ -87,43 +93,52 @@ void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   }
 }
 
+void deepSleepForHour() {
+  printHelper.println("Entering deep sleep for 1 hour");
+  Serial.println("Entering deep sleep for 1 hour");
+  esp_sleep_enable_timer_wakeup(
+      VOLTMETER_SLEEP_INTERVAL_US);
+  Serial.flush();
+  esp_deep_sleep_start();
+}
+
 void readAndWriteVoltageSensor() {
-  static uint32_t lastToggleTime = 0;
-
-  if (millis() - lastToggleTime >= READ_VOLTAGE_DELAY) {
-    int arrayLength = sizeof(voltageReadings) / sizeof(voltageReadings[0]);
-
-    lastToggleTime = millis();
-
-    totalVoltage -= voltageReadings[readVoltageIndex];
-    voltageReadings[readVoltageIndex] = readVoltage();
-    totalVoltage += voltageReadings[readVoltageIndex];
-
-    voltageCheckAndRestartIfFailed(&totalVoltage, &failedVoltageReadings);
-
-    readVoltageIndex = (readVoltageIndex + 1) % arrayLength;
-    averageVoltage = totalVoltage / arrayLength;
-
-    DynamicJsonDocument doc(1024);
-    char buffer[256];
-
-    doc["voltage"] = averageVoltage;
-
-    size_t n = serializeJson(doc, buffer);
-
-    bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
-
-    Serial.print("Published: ");
-    Serial.println(published);
-    // Debugging
-    printHelper.print("Published: ");
-    printHelper.println(String(published));
-
-    Serial.print("Battery Voltage: ");
-    Serial.print(averageVoltage);
-    Serial.println(" V");
-    // Debugging
-    printHelper.print("Battery Voltage: ");
-    printHelper.println(String(averageVoltage));
+  if (!bufferFilled) {
+    voltageSensorSetup();
   }
+  int arrayLength = sizeof(voltageReadings) / sizeof(voltageReadings[0]);
+
+  totalVoltage -= voltageReadings[readVoltageIndex];
+  voltageReadings[readVoltageIndex] = readVoltage();
+  totalVoltage += voltageReadings[readVoltageIndex];
+
+  voltageCheckAndRestartIfFailed(&totalVoltage, &failedVoltageReadings);
+
+  readVoltageIndex = (readVoltageIndex + 1) % arrayLength;
+  averageVoltage = totalVoltage / arrayLength;
+
+  DynamicJsonDocument doc(1024);
+  char buffer[256];
+
+  doc["voltage"] = averageVoltage;
+
+  size_t n = serializeJson(doc, buffer);
+
+  bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
+
+  Serial.print("Published: ");
+  Serial.println(published);
+  // Debugging
+  printHelper.print("Published: ");
+  printHelper.println(String(published));
+
+  Serial.print("Battery Voltage: ");
+  Serial.print(averageVoltage);
+  Serial.println(" V");
+  // Debugging
+  printHelper.print("Battery Voltage: ");
+  printHelper.println(String(averageVoltage));
+
+  // Go to deep sleep for 1 hour after publishing
+  deepSleepForHour();
 }
