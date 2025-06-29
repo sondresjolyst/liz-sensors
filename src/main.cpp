@@ -301,7 +301,10 @@ void loop() {
   if (strcmp(LIZ_TYPE, "sensor") == 0) {
     readAndWriteEnvironmentalSensors(SENSOR_TYPE);
   } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+    // Only run once per wakeup for voltmeter, then deep sleep is handled in
+    // controller
     readAndWriteVoltageSensor();
+    return;
   }
   discoverAndSubscribe();
 }
