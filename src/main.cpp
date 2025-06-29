@@ -27,11 +27,11 @@
 #include "web/WebSite.h"
 
 #ifndef SENSOR_TYPE
-#define SENSOR_TYPE "BME"  // "BME" or "DHT"
+#define SENSOR_TYPE "bme"  // "bme" or "dht"
 #endif
 
-#ifndef LIZ_TYPE
-#define LIZ_TYPE "sensor"  // "voltmeter" or "sensor"
+#ifndef GARGE_TYPE
+#define GARGE_TYPE "sensor"  // "voltmeter" or "sensor"
 #endif
 
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
@@ -80,15 +80,13 @@ String toLowerFunc(const char *s) {
 }
 
 String productNameLower = toLowerFunc(PRODUCER_NAME);
-String lizTypeLower = toLowerFunc(LIZ_TYPE);
+String gargeTypeLower = toLowerFunc(GARGE_TYPE);
 String sensorTypeLower = toLowerFunc(SENSOR_TYPE);
 const String OTA_PRODUCT_NAME =
-    productNameLower + "_" + lizTypeLower + "_" + sensorTypeLower;
+    productNameLower + "_" + gargeTypeLower + "_" + sensorTypeLower;
 
 void gargeSetupAP() {
-  Serial.println("Setting up Access Point...");
   setupAP();
-  Serial.println("Access Point started");
   isAPMode = true;
 }
 
@@ -138,7 +136,7 @@ void setup() {
   Serial.println("Disconnecting WiFi");
   WiFi.disconnect();
 
-  EEPROM.begin(EEPROM_SIZE);
+  EEPROMHelper_begin(EEPROM_SIZE);
   delay(10);
 
   pinMode(LED_BUILTIN, OUTPUT);
@@ -170,12 +168,12 @@ void setup() {
     setupTime();
 
     connectToMQTT();
-    if (strcmp(LIZ_TYPE, "sensor") == 0) {
+    if (strcmp(GARGE_TYPE, "sensor") == 0) {
       environmentalSensorSetup(SENSOR_TYPE);
-    } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+    } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
       voltageSensorSetup();
     } else {
-      Serial.println("Please set LIZ_TYPE");
+      Serial.println("Please set GARGE_TYPE");
     }
 
     server.on("/", webpage_status);  // Status page handler
@@ -257,8 +255,18 @@ void discoverAndSubscribe() {
 void loop() {
   if (isAPMode) {
     server.handleClient();
+    // Restart after 30 minutes in AP mode
+    static uint32_t apStartTime = 0;
+    if (apStartTime == 0) {
+      apStartTime = millis();
+    }
+    if (millis() - apStartTime > 30UL * 60UL * 1000UL) {  // 30 minutes
+      Serial.println("Restarting after 30 minutes in AP mode");
+      ESP.restart();
+    }
     return;
   }
+
   if (WiFi.status() != WL_CONNECTED) {
     static int16_t lastAttempt = 0;
     if (millis() - lastAttempt > 5000) {
@@ -298,9 +306,9 @@ void loop() {
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   client.loop();
-  if (strcmp(LIZ_TYPE, "sensor") == 0) {
+  if (strcmp(GARGE_TYPE, "sensor") == 0) {
     readAndWriteEnvironmentalSensors(SENSOR_TYPE);
-  } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+  } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
     // Only run once per wakeup for voltmeter, then deep sleep is handled in
     // controller
     readAndWriteVoltageSensor();

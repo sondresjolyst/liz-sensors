@@ -3,7 +3,8 @@ name: 🧹 Lint
 on:
   pull_request:
     branches:
-      - master
+      - main
+      - development
     types:
       - opened
       - edited
@@ -21,11 +22,3 @@ jobs:
       statuses: write
     with:
       filter_regex_exclude: (.*CHANGELOG\.md$|docs/workflows/.*)
-
-  lint-pr:
-    name: Lint PR
-    uses: equinor/ops-actions/.github/workflows/commitlint.yml@7250ebf9722b3e8ed96a427b36f8eb2df7512e81
-    permissions:
-      contents: read
-    with:
-      message: ${{ github.event.pull_request.title }}

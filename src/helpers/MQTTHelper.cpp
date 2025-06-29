@@ -15,7 +15,7 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
   DynamicJsonDocument doc(1024);
   char buffer[512];
 
-  doc["name"] = "Liz " + CHIP_ID_STRING + " Temperature";
+  doc["name"] = "Garge " + CHIP_ID_STRING + " Temperature";
   doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "°C";
@@ -37,7 +37,7 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
   DynamicJsonDocument doc(1024);
   char buffer[512];
 
-  doc["name"] = "Liz " + CHIP_ID_STRING + " Humidity";
+  doc["name"] = "Garge " + CHIP_ID_STRING + " Humidity";
   doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "%";
@@ -58,7 +58,7 @@ void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
   DynamicJsonDocument doc(1024);
   char buffer[512];
 
-  doc["name"] = "Liz " + CHIP_ID_STRING + " Voltage";
+  doc["name"] = "Garge " + CHIP_ID_STRING + " Voltage";
   doc["stat_cla"] = "measurement";
   doc["stat_t"] = MQTT_STATETOPIC;
   doc["unit_of_meas"] = "V";
@@ -212,10 +212,10 @@ void connectToMQTT() {
       printHelper.println("");
       printHelper.println("MQTT connected");
 
-      if (strcmp(LIZ_TYPE, "sensor") == 0) {
+      if (strcmp(GARGE_TYPE, "sensor") == 0) {
         sendMQTTTemperatureDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
         sendMQTTHumidityDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
-      } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+      } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
         sendMQTTVoltageDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
       }
     } else {
