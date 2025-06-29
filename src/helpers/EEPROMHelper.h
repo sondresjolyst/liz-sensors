@@ -10,6 +10,7 @@ extern const int EEPROM_SSID_END;
 extern const int EEPROM_PASSWORD_START;
 extern const int EEPROM_PASSWORD_END;
 
+void EEPROMHelper_begin(size_t size);
 void writeEEPROM(unsigned int start, int end, String data);
 String readEEPROM(int start, int end);
 void clearWifiCredentials();

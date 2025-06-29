@@ -136,7 +136,7 @@ void setup() {
   Serial.println("Disconnecting WiFi");
   WiFi.disconnect();
 
-  EEPROM.begin(EEPROM_SIZE);
+  EEPROMHelper_begin(EEPROM_SIZE);
   delay(10);
 
   pinMode(LED_BUILTIN, OUTPUT);
