@@ -27,11 +27,11 @@
 #include "web/WebSite.h"
 
 #ifndef SENSOR_TYPE
-#define SENSOR_TYPE "BME"  // "BME" or "DHT"
+#define SENSOR_TYPE "bme"  // "bme" or "dht"
 #endif
 
-#ifndef LIZ_TYPE
-#define LIZ_TYPE "sensor"  // "voltmeter" or "sensor"
+#ifndef GARGE_TYPE
+#define GARGE_TYPE "sensor"  // "voltmeter" or "sensor"
 #endif
 
 const char *MQTT_BROKER = SECRET_MQTTBROKER;
@@ -80,10 +80,10 @@ String toLowerFunc(const char *s) {
 }
 
 String productNameLower = toLowerFunc(PRODUCER_NAME);
-String lizTypeLower = toLowerFunc(LIZ_TYPE);
+String gargeTypeLower = toLowerFunc(GARGE_TYPE);
 String sensorTypeLower = toLowerFunc(SENSOR_TYPE);
 const String OTA_PRODUCT_NAME =
-    productNameLower + "_" + lizTypeLower + "_" + sensorTypeLower;
+    productNameLower + "_" + gargeTypeLower + "_" + sensorTypeLower;
 
 void gargeSetupAP() {
   setupAP();
@@ -168,12 +168,12 @@ void setup() {
     setupTime();
 
     connectToMQTT();
-    if (strcmp(LIZ_TYPE, "sensor") == 0) {
+    if (strcmp(GARGE_TYPE, "sensor") == 0) {
       environmentalSensorSetup(SENSOR_TYPE);
-    } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+    } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
       voltageSensorSetup();
     } else {
-      Serial.println("Please set LIZ_TYPE");
+      Serial.println("Please set GARGE_TYPE");
     }
 
     server.on("/", webpage_status);  // Status page handler
@@ -306,9 +306,9 @@ void loop() {
   resetWiFi.update();
   blinkLED(LED_BLINK_COUNT);
   client.loop();
-  if (strcmp(LIZ_TYPE, "sensor") == 0) {
+  if (strcmp(GARGE_TYPE, "sensor") == 0) {
     readAndWriteEnvironmentalSensors(SENSOR_TYPE);
-  } else if (strcmp(LIZ_TYPE, "voltmeter") == 0) {
+  } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
     readAndWriteVoltageSensor();
   }
   discoverAndSubscribe();

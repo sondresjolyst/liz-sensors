@@ -1,8 +1,8 @@
 # ReadTempAndHumidity
 
-## Liz Sensor Voltmeter
+## Garge Voltmeter
 
-![Liz Sensor Voltmeter](</assets/svg/Liz Sensor Voltmeter.svg>)
+![Garge Voltmeter](</assets/svg/garge_voltmeter.svg>)
 
 ### Voltage Divider Calculation for Wemos D1 Mini
 
@@ -87,6 +87,6 @@ Revised Runtime:
 
 $`\text{Runtime} = \frac{43.2Wh}{0.4W} = 108 \, \text{hours}`$
 
-## Liz Sensor BME280
+## Garge Sensor BME280
 
-![Liz Sensor Voltmeter](</assets/svg/Liz Sensor BME280.svg>)
+![Garge Sensor BME280](</assets/svg/garge_sensor_bme280.svg>)

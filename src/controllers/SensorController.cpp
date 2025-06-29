@@ -30,7 +30,7 @@ int32_t failedTempReadings = 0;
 int32_t failedHumidReadings = 0;
 
 void environmentalSensorSetup(const char *sensorType) {
-  if (strcmp(sensorType, "DHT") == 0) {
+  if (strcmp(sensorType, "dht") == 0) {
     Serial.printf("Sensor type is: %s\n", sensorType);
     dht.begin();
 
@@ -40,7 +40,7 @@ void environmentalSensorSetup(const char *sensorType) {
       totalTemp += tempReadings[i];
       totalHumid += humidReadings[i];
     }
-  } else if (strcmp(sensorType, "BME") == 0) {
+  } else if (strcmp(sensorType, "bme") == 0) {
     Serial.printf("Sensor type is: %s\n", sensorType);
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     if (!bme.begin(0x76)) {
@@ -86,14 +86,14 @@ void readAndWriteEnvironmentalSensors(const char *sensorType) {
     totalTemp -= tempReadings[readIndex];
     totalHumid -= humidReadings[readIndex];
 
-    if (strcmp(sensorType, "DHT") == 0) {
+    if (strcmp(sensorType, "dht") == 0) {
       currentTempReadings = dht.readTemperature();
       currentHumidReadings = dht.readHumidity();
 
       tempReadings[readIndex] = currentTempReadings + DHTtempOffset;
       humidReadings[readIndex] = currentHumidReadings + DHThumidOffset;
     }
-    if (strcmp(sensorType, "BME") == 0) {
+    if (strcmp(sensorType, "bme") == 0) {
       currentTempReadings = bme.readTemperature();
       currentHumidReadings = bme.readHumidity();
 
