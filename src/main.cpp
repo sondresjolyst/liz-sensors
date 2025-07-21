@@ -79,11 +79,11 @@ String toLowerFunc(const char *s) {
   return tmp;
 }
 
-String productNameLower = toLowerFunc(PRODUCER_NAME);
-String gargeTypeLower = toLowerFunc(GARGE_TYPE);
-String sensorTypeLower = toLowerFunc(SENSOR_TYPE);
+String producerNameLower = toLowerFunc(PRODUCER_NAME);  // garge
+String gargeTypeLower = toLowerFunc(GARGE_TYPE);        // voltmeter, sensor
+String sensorTypeLower = toLowerFunc(SENSOR_TYPE);      // bme, dht
 const String OTA_PRODUCT_NAME =
-    productNameLower + "_" + gargeTypeLower + "_" + sensorTypeLower;
+    producerNameLower + "_" + gargeTypeLower + "_" + sensorTypeLower;
 
 void gargeSetupAP() {
   setupAP();
@@ -128,9 +128,10 @@ void setup() {
 
   uint64_t chipId = ESP.getEfuseMac();
   CHIP_ID_STRING = String(chipId, HEX);
-  MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
+  MQTT_HOSTNAME_STRING = producerNameLower + "_" + CHIP_ID_STRING;
   MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
-  MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
+  MQTT_STATETOPIC = "garge/devices/sensors/" + MQTT_HOSTNAME_STRING + "/" +
+                    MQTT_HOSTNAME_STRING + "/state";
   WIFI_NAME = "Garge " + String(CHIP_ID_STRING);
 
   Serial.println("Disconnecting WiFi");
@@ -243,9 +244,9 @@ void discoverAndSubscribe() {
 
       if (isWizDevice(moduleName)) {
         std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
-        sendMQTTWizDiscoveryMsg(deviceIP, deviceName);
+        sendMQTTSocketDiscoveryMsg(deviceIP, deviceName);
 
-        std::string stateTopic = "home/storage/" + deviceName + "/set";
+        std::string stateTopic = "garge/devices/sockets/" + std::string(MQTT_HOSTNAME_STRING.c_str()) + "/" + deviceName + "/set";
         client.subscribe(stateTopic.c_str());
       }
     }

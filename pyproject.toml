@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "231202-084716-d1-mini"
+version = "0.1.0"
+description = ""
+authors = ["sondre Sjølyst <sonyslyst@gmail.com>"]
+readme = "README.md"
+packages = [{include = "231202_084716_d1_mini"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.4"
+esptool = "^4.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

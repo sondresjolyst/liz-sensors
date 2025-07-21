@@ -4,13 +4,15 @@
 
 #include "MQTTHelper.h"
 
+extern String MQTT_HOSTNAME_STRING;
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
-                                     String MQTT_HOSTNAME) {
-  String discoveryTopic =
-      "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_temperature/config";
+void sendMQTTTemperatureDiscoveryMsg(const String &discoveredDeviceId,
+                                     const String &MQTT_STATETOPIC) {
+  String discoveryTopic = "garge/devices/sensors/" + MQTT_HOSTNAME_STRING +
+                          "/" + discoveredDeviceId + "/config";
 
   DynamicJsonDocument doc(1024);
   char buffer[512];
@@ -21,7 +23,7 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
   doc["unit_of_meas"] = "°C";
   doc["dev_cla"] = "temperature";
   doc["frc_upd"] = true;
-  doc["uniq_id"] = String(MQTT_HOSTNAME) + "_temperature";
+  doc["uniq_id"] = discoveredDeviceId + "_temperature";
   doc["val_tpl"] = "{{value_json.temperature | round(3) | default(0)}}";
 
   size_t n = serializeJson(doc, buffer);
@@ -29,10 +31,10 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
   client.publish(discoveryTopic.c_str(), buffer, n);
 }
 
-void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
-                                  String MQTT_HOSTNAME) {
-  String discoveryTopic =
-      "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_humidity/config";
+void sendMQTTHumidityDiscoveryMsg(const String &discoveredDeviceId,
+                                  const String &MQTT_STATETOPIC) {
+  String discoveryTopic = "garge/devices/sensors/" + MQTT_HOSTNAME_STRING +
+                          "/" + discoveredDeviceId + "/config";
 
   DynamicJsonDocument doc(1024);
   char buffer[512];
@@ -43,7 +45,7 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
   doc["unit_of_meas"] = "%";
   doc["dev_cla"] = "humidity";
   doc["frc_upd"] = true;
-  doc["uniq_id"] = String(MQTT_HOSTNAME) + "_humidity";
+  doc["uniq_id"] = discoveredDeviceId + "_humidity";
   doc["val_tpl"] = "{{value_json.humidity | round(3) | default(0)}}";
 
   size_t n = serializeJson(doc, buffer);
@@ -51,9 +53,10 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
   client.publish(discoveryTopic.c_str(), buffer, n);
 }
 
-void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
-  String discoveryTopic =
-      "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_voltage/config";
+void sendMQTTVoltageDiscoveryMsg(const String &discoveredDeviceId,
+                                 const String &MQTT_STATETOPIC) {
+  String discoveryTopic = "garge/devices/sensors/" + MQTT_HOSTNAME_STRING +
+                          "/" + discoveredDeviceId + "/config";
 
   DynamicJsonDocument doc(1024);
   char buffer[512];
@@ -64,7 +67,7 @@ void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
   doc["unit_of_meas"] = "V";
   doc["dev_cla"] = "voltage";
   doc["frc_upd"] = true;
-  doc["uniq_id"] = String(MQTT_HOSTNAME) + "_voltage";
+  doc["uniq_id"] = discoveredDeviceId + "_voltage";
   doc["val_tpl"] = "{{value_json.voltage | round(3) | default(0)}}";
 
   size_t n = serializeJson(doc, buffer);
@@ -72,15 +75,22 @@ void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
   client.publish(discoveryTopic.c_str(), buffer, n);
 }
 
-void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
-  std::string discoveryTopic = "homeassistant/switch/" + deviceName + "/config";
+void sendMQTTSocketDiscoveryMsg(const std::string &deviceIP,
+                                const std::string &deviceName,
+                                const std::string &model,
+                                const std::string &manufacturer) {
+  std::string sensorId = MQTT_HOSTNAME_STRING.c_str();
+  std::string discoveryTopic =
+      "garge/devices/sockets/" + sensorId + "/" + deviceName + "/config";
 
   DynamicJsonDocument doc(1024);
-  char buffer[512];
+  char buffer[1024];
 
   doc["name"] = deviceName;
-  doc["command_topic"] = "home/storage/" + deviceName + "/set";
-  doc["state_topic"] = "home/storage/" + deviceName + "/state";
+  doc["command_topic"] =
+      "garge/devices/sockets/" + sensorId + "/" + deviceName + "/set";
+  doc["state_topic"] =
+      "garge/devices/sockets/" + sensorId + "/" + deviceName + "/state";
   doc["payload_on"] = "ON";
   doc["payload_off"] = "OFF";
   doc["optimistic"] = false;
@@ -89,8 +99,8 @@ void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
   doc["uniq_id"] = deviceName;
   doc["device"]["identifiers"] = deviceName;
   doc["device"]["name"] = deviceName;
-  doc["device"]["model"] = "Wiz Light";
-  doc["device"]["manufacturer"] = "Wiz";
+  doc["device"]["model"] = model;
+  doc["device"]["manufacturer"] = manufacturer;
 
   size_t n = serializeJson(doc, buffer);
   printHelper.print("Sending discovery for: ");
@@ -102,14 +112,25 @@ void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
   printHelper.println("message: ");
   printHelper.println(buffer);
 
-  client.publish(discoveryTopic.c_str(), buffer, n);
+  bool pubResult = false;
+  if (client.connected()) {
+    pubResult = client.publish(discoveryTopic.c_str(), (const uint8_t *)buffer,
+                               n, false);
+    printHelper.print("Publish result (retain=false): ");
+    printHelper.println(pubResult ? "success" : "fail");
+    printHelper.print("MQTT client state: ");
+    printHelper.println(String(client.state()));
+  } else {
+    printHelper.println("Publish skipped: MQTT not connected");
+  }
 }
 
-void publishWizState(String deviceName, bool lightState) {
-  printHelper.println("publishWizState...");
+void publishSocketState(const String &deviceName, bool socketState) {
+  printHelper.println("publishSocketState...");
 
-  String payload = lightState ? "ON" : "OFF";
-  String stateTopic = "home/storage/" + deviceName + "/state";
+  String payload = socketState ? "ON" : "OFF";
+  String stateTopic = "garge/devices/sockets/" + MQTT_HOSTNAME_STRING + "/" +
+                      deviceName + "/state";
   client.publish(stateTopic.c_str(), payload.c_str());
 
   printHelper.println(deviceName);
@@ -155,7 +176,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
   printHelper.println(String(port));
   printHelper.println(payloadStr);
 
-  // If the payload is "on", turn on the light/switch
+  // If the payload is "on", turn on the socket
   if (payloadStr == "ON") {
     liz::setPilot(deviceIP.c_str(), port, true);
   } else if (payloadStr == "OFF") {
@@ -180,13 +201,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
         moduleName = match.str();
       }
 
-      std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
+      std::string deviceName = "socket_" + moduleName + "_" + deviceMac;
 
       printHelper.print("MAC: ");
       printHelper.println(deviceMac.c_str());
       printHelper.print("State: ");
       printHelper.println(state ? "true" : "false");
-      publishWizState(deviceName.c_str(), state);
+      publishSocketState(deviceName.c_str(), state);
     }
   }
 }
@@ -200,7 +221,7 @@ void connectToMQTT() {
   printHelper.println(MQTT_BROKER);
 
   client.setServer(MQTT_BROKER, MQTT_PORT);
-  client.setBufferSize(512);
+  client.setBufferSize(1024);
   client.setCallback(mqttCallback);
 
   while (!client.connected()) {
@@ -213,10 +234,14 @@ void connectToMQTT() {
       printHelper.println("MQTT connected");
 
       if (strcmp(GARGE_TYPE, "sensor") == 0) {
-        sendMQTTTemperatureDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
-        sendMQTTHumidityDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+        sendMQTTTemperatureDiscoveryMsg(MQTT_HOSTNAME_STRING + "_temperature",
+                                        MQTT_STATETOPIC);
+        sendMQTTHumidityDiscoveryMsg(MQTT_HOSTNAME_STRING + "_humidity",
+                                     MQTT_STATETOPIC);
       } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
-        sendMQTTVoltageDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
+        sendMQTTVoltageDiscoveryMsg(MQTT_HOSTNAME_STRING, MQTT_STATETOPIC);
+        sendMQTTVoltageDiscoveryMsg(MQTT_HOSTNAME_STRING + "_voltage",
+                                    MQTT_STATETOPIC);
       }
     } else {
       Serial.print("MQTT connection failed! Error code = ");

@@ -37,6 +37,15 @@ String readEEPROM(int start, int end) {
   return res;
 }
 
+void writeEEPROMInt(unsigned int start, int end, int value) {
+  writeEEPROM(start, end, String(value));
+}
+
+int readEEPROMInt(int start, int end) {
+  String val = readEEPROM(start, end);
+  return val.toInt();
+}
+
 void clearWifiCredentials() {
   if (!eeprom_initialized) return;
   for (int i = EEPROM_SSID_START; i < EEPROM_PASSWORD_END; i++) {
