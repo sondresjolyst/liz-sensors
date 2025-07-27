@@ -6,6 +6,7 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 #include <regex>
 #include <string>
@@ -18,15 +19,15 @@ extern String CHIP_ID_STRING;
 extern String MQTT_STATETOPIC;
 extern const char *MQTT_BROKER;
 extern const char *MQTT_HOSTNAME;
-extern const char *MQTT_PASS;
-extern const char *MQTT_USER;
+extern String EEPROM_MQTT_USERNAME;
+extern String EEPROM_MQTT_PASSWORD;
 extern const int MQTT_PORT;
 extern const int port;
 
 extern std::vector<std::pair<String, String>> discoveredDevices;
 extern PRINTHelper printHelper;
-extern WiFiClient espClient;
-extern PubSubClient client;
+extern WiFiClientSecure* secureClient;
+extern PubSubClient* mqttClient;
 
 void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
                                      String MQTT_HOSTNAME);

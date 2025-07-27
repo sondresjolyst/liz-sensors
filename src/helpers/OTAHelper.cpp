@@ -10,35 +10,36 @@
 
 #include <cstdio>
 
+#include "LogHelper.h"
 #include "OTAHelper.h"
 
-void onStart() { Serial.println("Start"); }
+void onStart() { LOG("INFO", "OTA Start"); }
 
-void onEnd() { Serial.println("\nEnd"); }
+void onEnd() { LOG("INFO", "OTA End"); }
 
 void onProgress(unsigned int progress, unsigned int total) {
-  Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  LOG("INFO", "OTA Progress: %u%%", (progress / (total / 100)));
 }
 
 void onError(ota_error_t error) {
-  Serial.printf("Error [%u]: ", error);
+  LOG("ERROR", "OTA Error [%u]: ", error);
   if (error == OTA_AUTH_ERROR)
-    Serial.println("Auth Failed");
+    LOG("ERROR", "Auth Failed");
   else if (error == OTA_BEGIN_ERROR)
-    Serial.println("Begin Failed");
+    LOG("ERROR", "Begin Failed");
   else if (error == OTA_CONNECT_ERROR)
-    Serial.println("Connect Failed");
+    LOG("ERROR", "Connect Failed");
   else if (error == OTA_RECEIVE_ERROR)
-    Serial.println("Receive Failed");
+    LOG("ERROR", "Receive Failed");
   else if (error == OTA_END_ERROR)
-    Serial.println("End Failed");
+    LOG("ERROR", "End Failed");
 }
 
 OTAHelper::OTAHelper() {}
 
 void OTAHelper::setup() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Error: No WiFi connection when setting up OTAHelper");
+    LOG("ERROR", "No WiFi connection when setting up OTAHelper");
     return;
   }
 
@@ -48,7 +49,7 @@ void OTAHelper::setup() {
   ArduinoOTA.onError(onError);
 
   ArduinoOTA.begin();
-  Serial.println("OTA is ready");
+  LOG("INFO", "OTA is ready");
 }
 
 void OTAHelper::loop() { ArduinoOTA.handle(); }
@@ -71,7 +72,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   http.begin(manifestUrl);
   int httpCode = http.GET();
   if (httpCode != 200) {
-    Serial.printf("Failed to fetch manifest: %d\n", httpCode);
+    LOG("ERROR", "Failed to fetch manifest: %d", httpCode);
     http.end();
     return;
   }
@@ -82,7 +83,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   DynamicJsonDocument doc(4096);
   DeserializationError err = deserializeJson(doc, payload);
   if (err) {
-    Serial.println("Failed to parse manifest JSON");
+    LOG("ERROR", "Failed to parse manifest JSON");
     return;
   }
 
@@ -102,22 +103,22 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   }
 
   if (!latest_version || !latest_bin_url) {
-    Serial.println("No matching device or missing fields in manifest");
+    LOG("ERROR", "No matching device or missing fields in manifest");
     return;
   }
 
   if (strcmp(latest_version, currentVersion) == 0) {
-    Serial.println("Already up to date");
+    LOG("INFO", "Already up to date");
     return;
   }
 
-  Serial.printf("New version available: %s\n", latest_version);
-  Serial.println("Starting OTA update...");
+  LOG("INFO", "New version available: %s", latest_version);
+  LOG("INFO", "Starting OTA update...");
 
   http.begin(latest_bin_url);
   int binCode = http.GET();
   if (binCode != 200) {
-    Serial.printf("Failed to fetch bin: %d\n", binCode);
+    LOG("ERROR", "Failed to fetch bin: %d", binCode);
     http.end();
     return;
   }
@@ -125,7 +126,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   int contentLength = http.getSize();
   bool canBegin = Update.begin(contentLength);
   if (!canBegin) {
-    Serial.println("Not enough space for OTA");
+    LOG("ERROR", "Not enough space for OTA");
     http.end();
     return;
   }
@@ -134,10 +135,10 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   size_t written = Update.writeStream(*stream);
 
   if (written == contentLength && Update.end()) {
-    Serial.println("OTA Success! Rebooting...");
+    LOG("INFO", "OTA Success! Rebooting...");
     ESP.restart();
   } else {
-    Serial.println("OTA Failed!");
+    LOG("ERROR", "OTA Failed!");
   }
   http.end();
 }

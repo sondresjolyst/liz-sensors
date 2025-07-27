@@ -11,7 +11,7 @@
 
 extern WebServer server;
 extern WiFiClient serverClient;
-extern PubSubClient client;
+extern PubSubClient* mqttClient;
 
 String getWifiOptions() {
   int n = WiFi.scanNetworks();
@@ -111,7 +111,7 @@ void webpage_status() {
     <body>
       <h1>Garge Web Server</h1>
       <p>MQTT Connectivity: )";
-  html += (client.connected()) ? "Connected" : "Disconnected";
+  html += (mqttClient->connected()) ? "Connected" : "Disconnected";
   html += R"(
         </p>
       <form action="/clear-wifi" method="POST">

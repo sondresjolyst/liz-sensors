@@ -2,13 +2,15 @@
 
 #include <string>
 
+#include "LogHelper.h"
 #include "MQTTHelper.h"
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+extern void checkSerialForCredentials();
 
 void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
                                      String MQTT_HOSTNAME) {
+  LOG("DEBUG", "sendMQTTTemperatureDiscoveryMsg...");
+
   String discoveryTopic =
       "homeassistant/sensor/" + String(MQTT_HOSTNAME) + "_temperature/config";
 
@@ -26,7 +28,15 @@ void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
 
   size_t n = serializeJson(doc, buffer);
 
-  client.publish(discoveryTopic.c_str(), buffer, n);
+  LOG("DEBUG", "Serialized JSON size: %d", n);
+  LOG("DEBUG", "MQTT buffer size: %d", mqttClient->getBufferSize());
+
+  bool ok = mqttClient->publish(discoveryTopic.c_str(), buffer, n);
+  if (!ok) {
+    LOG("ERROR",
+        "Failed to publish discovery message! (PubSubClient returned false)");
+  }
+  LOG("DEBUG", "sendMQTTTemperatureDiscoveryMsg done.");
 }
 
 void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
@@ -48,7 +58,7 @@ void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC,
 
   size_t n = serializeJson(doc, buffer);
 
-  client.publish(discoveryTopic.c_str(), buffer, n);
+  mqttClient->publish(discoveryTopic.c_str(), buffer, n);
 }
 
 void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
@@ -69,7 +79,7 @@ void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME) {
 
   size_t n = serializeJson(doc, buffer);
 
-  client.publish(discoveryTopic.c_str(), buffer, n);
+  mqttClient->publish(discoveryTopic.c_str(), buffer, n);
 }
 
 void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
@@ -102,7 +112,7 @@ void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName) {
   printHelper.println("message: ");
   printHelper.println(buffer);
 
-  client.publish(discoveryTopic.c_str(), buffer, n);
+  mqttClient->publish(discoveryTopic.c_str(), buffer, n);
 }
 
 void publishWizState(String deviceName, bool lightState) {
@@ -110,7 +120,7 @@ void publishWizState(String deviceName, bool lightState) {
 
   String payload = lightState ? "ON" : "OFF";
   String stateTopic = "home/storage/" + deviceName + "/state";
-  client.publish(stateTopic.c_str(), payload.c_str());
+  mqttClient->publish(stateTopic.c_str(), payload.c_str());
 
   printHelper.println(deviceName);
   printHelper.println(payload);
@@ -118,9 +128,7 @@ void publishWizState(String deviceName, bool lightState) {
 }
 
 void mqttCallback(char *topic, byte *payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.println("] ");
+  LOG("INFO", "Message arrived [%s]", topic);
 
   printHelper.print("Message arrived [");
   printHelper.print(topic);
@@ -191,25 +199,48 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
   }
 }
 
-bool mqttStatus() { return client.connected(); }
+bool mqttStatus() { return mqttClient->connected(); }
 
 void connectToMQTT() {
-  Serial.print("Attempting to connect to MQTT broker: ");
-  Serial.println(MQTT_BROKER);
+  LOG("INFO", "Attempting to connect to MQTT broker: %s", MQTT_BROKER);
   printHelper.print("Attempting to connect to MQTT broker: ");
   printHelper.println(MQTT_BROKER);
 
-  client.setServer(MQTT_BROKER, MQTT_PORT);
-  client.setBufferSize(512);
-  client.setCallback(mqttCallback);
+  mqttClient->setServer(MQTT_BROKER, MQTT_PORT);
+  mqttClient->setBufferSize(512);
+  mqttClient->setCallback(mqttCallback);
 
-  while (!client.connected()) {
+  String lastUsername = EEPROM_MQTT_USERNAME;
+  String lastPassword = EEPROM_MQTT_PASSWORD;
+
+  while (!mqttClient->connected()) {
     liz::clearDiscoveredDevices();
     printHelper.println("Clearing Discovered Devices");
-    if (client.connect(MQTT_HOSTNAME, MQTT_USER, MQTT_PASS)) {
-      Serial.println("");
-      Serial.println("MQTT connected");
-      printHelper.println("");
+
+    // Extra debug: Print WiFi and socket status
+    LOG("DEBUG", "WiFi.status(): %d, IP: %s", WiFi.status(),
+        WiFi.localIP().toString().c_str());
+    LOG("DEBUG", "WiFi RSSI: %d", WiFi.RSSI());
+    char errbuf[128];
+    int errcode = secureClient->lastError(errbuf, sizeof(errbuf));
+    LOG("DEBUG",
+        "SecureClient connected(): %d, available(): %d, "
+        "lastError(): %d, msg: %s",
+        secureClient->connected(), secureClient->available(), errcode, errbuf);
+
+    LOG("DEBUG", "Free heap: %u", ESP.getFreeHeap());
+
+    if (EEPROM_MQTT_USERNAME != lastUsername ||
+        EEPROM_MQTT_PASSWORD != lastPassword) {
+      LOG("INFO",
+          "Detected updated MQTT credentials, breaking out of connect loop.");
+      break;
+    }
+
+    LOG("DEBUG", "Calling mqttClient->connect()...");
+    if (mqttClient->connect(MQTT_HOSTNAME, EEPROM_MQTT_USERNAME.c_str(),
+                            EEPROM_MQTT_PASSWORD.c_str())) {
+      LOG("INFO", "MQTT connected");
       printHelper.println("MQTT connected");
 
       if (strcmp(GARGE_TYPE, "sensor") == 0) {
@@ -219,10 +250,22 @@ void connectToMQTT() {
         sendMQTTVoltageDiscoveryMsg(MQTT_STATETOPIC, MQTT_HOSTNAME);
       }
     } else {
-      Serial.print("MQTT connection failed! Error code = ");
-      Serial.println(client.state());
+      LOG("ERROR", "MQTT connection failed! Error code = %d",
+          mqttClient->state());
       printHelper.print("MQTT connection failed! Error code = ");
-      printHelper.println(String(client.state()));
+      printHelper.println(String(mqttClient->state()));
+
+      errcode = secureClient->lastError(errbuf, sizeof(errbuf));
+      LOG("DEBUG", "SecureClient connected(): %d, lastError(): %d, msg: %s",
+          secureClient->connected(), errcode, errbuf);
+      LOG("DEBUG", "WiFi.status(): %d, IP: %s", WiFi.status(),
+          WiFi.localIP().toString().c_str());
+    }
+
+    int64_t waitStart = millis();
+    while (millis() - waitStart < 5000) {
+      checkSerialForCredentials();
+      delay(10);
     }
   }
 }

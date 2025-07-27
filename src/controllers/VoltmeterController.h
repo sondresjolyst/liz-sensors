@@ -9,7 +9,7 @@
 
 #include "helpers/PRINTHelper.h"
 
-extern PubSubClient client;
+extern PubSubClient* mqttClient;
 extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 

@@ -1,10 +1,12 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
+#include <WiFiClientSecure.h>
+
 #include <cstdio>
 
 #include "PRINTHelper.h"
 
-PRINTHelper::PRINTHelper(WiFiClient *client) : _client(client) {}
+PRINTHelper::PRINTHelper(WiFiClientSecure* client) : _client(client) {}
 
 void PRINTHelper::print(const String &message) {
   Serial.print(message);

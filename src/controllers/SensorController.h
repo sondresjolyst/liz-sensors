@@ -9,6 +9,7 @@
 #include <DHT.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <WiFiClientSecure.h>
 
 #include <cmath>
 #include <cstdint>
@@ -17,8 +18,8 @@
 
 extern DHT dht;
 extern Adafruit_BME280 bme;
-extern WiFiClient serverClient;
-extern PubSubClient client;
+extern WiFiClientSecure* secureClient;
+extern PubSubClient* mqttClient;
 extern String MQTT_STATETOPIC;
 extern PRINTHelper printHelper;
 

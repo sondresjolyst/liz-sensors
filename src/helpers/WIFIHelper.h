@@ -7,6 +7,7 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 #include "EEPROMHelper.h"
 
@@ -21,7 +22,7 @@ extern const int WIFI_TRIES;
 
 extern DNSServer dnsServer;
 extern WiFiServer telnetServer;
-extern WiFiClient serverClient;
+extern WiFiClientSecure* secureClient;
 extern WebServer server;
 
 const size_t kBufferSize = 256;

@@ -1,7 +1,9 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#include "VoltmeterController.h"
 #include <esp_sleep.h>
+
+#include "../helpers/LogHelper.h"
+#include "VoltmeterController.h"
 
 RTC_DATA_ATTR float averageVoltage = 0;
 RTC_DATA_ATTR float voltageReadings[READING_VOLTAGE_BUFFER];
@@ -14,8 +16,7 @@ RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
 
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
-  Serial.print("Sensor Value: ");
-  Serial.println(sensorValue);
+  LOG("INFO", "Sensor Value value: %d", sensorValue);
 
   printHelper.print("sensorValue: ");
   printHelper.print(String(sensorValue));
@@ -23,18 +24,14 @@ float readVoltage() {
 
   // Calculate the measured voltage at the divider output
   float voltageMeasured = (ANALOG_VOLTAGE / ANALOG_RESOLUTION) * sensorValue;
-  Serial.print("voltageMeasured: ");
-  Serial.print(voltageMeasured, 5);
-  Serial.println(" V");
+  LOG("INFO", "voltageMeasured: %.5f V", voltageMeasured);
 
   printHelper.print("voltageMeasured: ");
   printHelper.print(String(voltageMeasured, 5));
   printHelper.println(" V");
 
   float vinTest = voltageMeasured * ((R1 + R2) / R2);
-  Serial.print("vinTest: ");
-  Serial.print(vinTest, 5);
-  Serial.println(" V");
+  LOG("INFO", "vinTest: %.5f V", vinTest);
 
   printHelper.print("vinTest: ");
   printHelper.print(String(vinTest, 5));
@@ -43,9 +40,7 @@ float readVoltage() {
   // calculated correction
   float vinMeasuredCorrected =
       voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
-  Serial.print("vinMeasuredCorrected: ");
-  Serial.print(vinMeasuredCorrected, 5);
-  Serial.println(" V");
+  LOG("INFO", "vinMeasuredCorrected: %.5f V", vinMeasuredCorrected);
 
   printHelper.print("vinMeasuredCorrected: ");
   printHelper.print(String(vinMeasuredCorrected, 5));
@@ -53,9 +48,7 @@ float readVoltage() {
 
   // exponential correction
   float vinTestCorrectedExponential = a * pow(vinTest, b);
-  Serial.print("vinTestCorrectedExponential: ");
-  Serial.print(vinTestCorrectedExponential, 5);
-  Serial.println(" V");
+  LOG("INFO", "vinTestCorrectedExponential: %.5f V", vinTestCorrectedExponential);
 
   printHelper.print("vinTestCorrectedExponential: ");
   printHelper.print(String(vinTestCorrectedExponential, 5));
@@ -78,26 +71,25 @@ void voltageSensorSetup() {
 }
 
 void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings) {
-  printHelper.println("Checking if reading failed");
+  LOG("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
-    printHelper.printf("Reading: %s", String(*reading));
+    LOG("ERROR", "Reading: %s", String(*reading));
     (*failedReadings) += 1;
-    printHelper.printf("Failed count: %s", String(*failedReadings));
+    LOG("ERROR", "Failed count: %s", String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
     }
   } else {
-    printHelper.println("Reading OK");
-    printHelper.printf("Reading: %s", String(*reading));
+    LOG("INFO", "Reading OK");
+    LOG("INFO", "Reading: %s", String(*reading));
     *failedReadings = 0;
   }
 }
 
 void deepSleepForHour() {
   printHelper.println("Entering deep sleep for 1 hour");
-  Serial.println("Entering deep sleep for 1 hour");
-  esp_sleep_enable_timer_wakeup(
-      VOLTMETER_SLEEP_INTERVAL_US);
+  LOG("INFO", "Entering deep sleep for 1 hour");
+  esp_sleep_enable_timer_wakeup(VOLTMETER_SLEEP_INTERVAL_US);
   Serial.flush();
   esp_deep_sleep_start();
 }
@@ -124,21 +116,15 @@ void readAndWriteVoltageSensor() {
 
   size_t n = serializeJson(doc, buffer);
 
-  bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
+  bool published = mqttClient->publish(MQTT_STATETOPIC.c_str(), buffer, n);
 
-  Serial.print("Published: ");
-  Serial.println(published);
-  // Debugging
+  LOG("INFO", "Published: %s", published ? "true" : "false");
   printHelper.print("Published: ");
   printHelper.println(String(published));
 
-  Serial.print("Battery Voltage: ");
-  Serial.print(averageVoltage);
-  Serial.println(" V");
-  // Debugging
+  LOG("INFO", "Battery Voltage: %.5f V", averageVoltage);
   printHelper.print("Battery Voltage: ");
   printHelper.println(String(averageVoltage));
 
-  // Go to deep sleep for 1 hour after publishing
   deepSleepForHour();
 }

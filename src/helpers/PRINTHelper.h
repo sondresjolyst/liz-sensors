@@ -3,20 +3,21 @@
 #ifndef SRC_HELPERS_PRINTHELPER_H_
 #define SRC_HELPERS_PRINTHELPER_H_
 
+#include <WiFiClientSecure.h>
+
 #include <Arduino.h>
-#include <WiFiClient.h>
 #include <cstdio>
 
 class PRINTHelper {
  public:
-  explicit PRINTHelper(WiFiClient *client);
+  explicit PRINTHelper(WiFiClientSecure* client);
 
   void print(const String &message);
   void println(const String &message);
   void printf(const char *format, ...);
 
  private:
-  WiFiClient *_client;
+  WiFiClientSecure* _client;
 };
 
 #endif  // SRC_HELPERS_PRINTHELPER_H_

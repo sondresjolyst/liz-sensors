@@ -1,5 +1,6 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
+#include "../helpers/LogHelper.h"
 #include "SensorController.h"
 
 #ifndef I2C_SDA_PIN
@@ -31,7 +32,7 @@ int32_t failedHumidReadings = 0;
 
 void environmentalSensorSetup(const char *sensorType) {
   if (strcmp(sensorType, "dht") == 0) {
-    Serial.printf("Sensor type is: %s\n", sensorType);
+    LOG("INFO", "Sensor type is: %s", sensorType);
     dht.begin();
 
     for (int i = 0; i < READING_BUFFER; i++) {
@@ -41,12 +42,12 @@ void environmentalSensorSetup(const char *sensorType) {
       totalHumid += humidReadings[i];
     }
   } else if (strcmp(sensorType, "bme") == 0) {
-    Serial.printf("Sensor type is: %s\n", sensorType);
+    LOG("INFO", "Sensor type is: %s", sensorType);
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     if (!bme.begin(0x76)) {
-      Serial.println("Could not find a valid BME280 sensor, check wiring!");
-      while (1) {
-      }
+      LOG("ERROR", "Could not find a valid BME280 sensor, check wiring!");
+      // while (1) {
+      // }
     }
     for (int i = 0; i < READING_BUFFER; i++) {
       tempReadings[i] = bme.readTemperature() + BMEtempOffset;
@@ -55,12 +56,12 @@ void environmentalSensorSetup(const char *sensorType) {
       totalHumid += humidReadings[i];
     }
   } else {
-    Serial.print("Error: No sensor type selected!");
+    LOG("ERROR", "No sensor type selected!");
   }
 }
 
 void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
-  printHelper.println("Checking if reading failed");
+  LOG("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
     printHelper.printf("Reading: %s", String(*reading));
     (*failedReadings) += 1;
@@ -136,25 +137,17 @@ void readAndWriteEnvironmentalSensors(const char *sensorType) {
 
     size_t n = serializeJson(doc, buffer);
 
-    bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
+    bool published = mqttClient->publish(MQTT_STATETOPIC.c_str(), buffer, n);
 
-    Serial.println("Published: ");
-    Serial.println(published);
-    // Debugging
+    LOG("INFO", "Published: %s", published ? "true" : "false");
     printHelper.print("Published: ");
     printHelper.println(String(published));
 
-    Serial.print("Temperature: ");
-    Serial.print(averageTemp);
-    Serial.println(" °C");
-    // Debugging
+    LOG("INFO", "Temperature: %.2f °C", averageTemp);
     printHelper.print("averageTemp: ");
     printHelper.println(String(averageTemp));
 
-    Serial.print("Humidity: ");
-    Serial.print(averageHumid);
-    Serial.println(" %");
-    // Debugging
+    LOG("INFO", "Humidity: %.2f %%", averageHumid);
     printHelper.print("averageHumid: ");
     printHelper.println(String(averageHumid));
   }
