@@ -2,10 +2,10 @@ import psycopg2
 import subprocess
 import getpass
 import re
-import hashlib
 import os
 import secrets
 import hvac
+from utils import create_or_update_mqtt_user, set_mqtt_acl, hash_password, generate_salt
 
 garge_name = "garge"
 garge_environment = "dev"
@@ -26,6 +26,12 @@ vault_github_token = None
 
 serial_port = 'COM4'
 serial_speed = 9600
+
+sensor_acl = [
+    {"action": "all", "permission": "allow", "topic": "homeassistant/#", "qos": 0, "retain": 1},
+    {"action": "all", "permission": "allow", "topic": "home/#", "qos": 0, "retain": 1},
+    {"action": "all", "permission": "allow", "topic": "garge/#", "qos": 0, "retain": 1},
+]
 
 pg_user = input("Enter PostgreSQL admin username: ")
 pg_password = getpass.getpass("Enter PostgreSQL admin password: ")
@@ -102,9 +108,8 @@ except Exception as e:
     print(f"Vault error: {e}")
     exit(1)
 
-salt = os.urandom(16).hex()
-hash_input = (mqtt_password + salt).encode('utf-8')
-password_hash = hashlib.sha256(hash_input).hexdigest()
+salt = generate_salt()
+password_hash = hash_password(mqtt_password, salt)
 
 try:
     db_connection = psycopg2.connect(
@@ -114,28 +119,21 @@ try:
         host=database_host,
         port=database_port
     )
-    cur = db_connection.cursor()
-    cur.execute(
-        f"""
-        INSERT INTO {database_user_table} (username, password_hash, salt, is_superuser) VALUES (%s, %s, %s, %s)
-        ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, salt = EXCLUDED.salt, is_superuser = EXCLUDED.is_superuser;
-        """,
-        (sensor_name, password_hash, salt, False)
+    create_or_update_mqtt_user(
+        db_connection,
+        database_user_table,
+        sensor_name,
+        password_hash,
+        salt,
+        False
     )
-    cur.execute(
-        f"DELETE FROM {database_acl_table} WHERE username = %s;",
-        (sensor_name,)
+
+    set_mqtt_acl(
+        db_connection,
+        database_acl_table,
+        sensor_name,
+        sensor_acl
     )
-    cur.execute(
-            f"""
-            INSERT INTO {database_acl_table} (username, action, permission, topic, qos, retain)
-            VALUES (%s, 'all', 'allow', 'homeassistant/#', 1, 1),
-                (%s, 'all', 'allow', 'home/#', 1, 1),
-                (%s, 'all', 'allow', 'garge/#', 1, 1)
-            ON CONFLICT DO NOTHING;
-            """,
-            (sensor_name, sensor_name, sensor_name)
-        )
     db_connection.commit()
     if action == 'created':
         print(f"MQTT user '{sensor_name}' created in database.")
@@ -143,7 +141,6 @@ try:
         print(f"MQTT user '{sensor_name}' updated in database.")
     else:
         print(f"MQTT user '{sensor_name}' used existing credentials.")
-    cur.close()
     db_connection.close()
 except Exception as e:
     print(f"Database error: {e}")
