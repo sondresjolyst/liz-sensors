@@ -3,6 +3,10 @@
 #ifndef SRC_HELPERS_OTAHELPER_H_
 #define SRC_HELPERS_OTAHELPER_H_
 
+#include "PRINTHelper.h"
+
+extern PRINTHelper printHelper;
+
 class OTAHelper {
  public:
   OTAHelper();

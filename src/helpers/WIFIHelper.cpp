@@ -2,7 +2,6 @@
 
 #include <WebServer.h>
 
-#include "LogHelper.h"
 #include "WIFIHelper.h"
 
 DNSServer dnsServer;
@@ -14,16 +13,17 @@ bool connectWifi(String ssid, String password) {
   int tries = 0;
   while (tries < WIFI_TRIES) {
     if (WiFi.status() == WL_CONNECTED) {
-      LOG("INFO", "WiFi connected after %d attempts", tries + 1);
+      printHelper.log("INFO", "WiFi connected after %d attempts", tries + 1);
       telnetServer.begin();
       telnetServer.setNoDelay(true);
       return true;
     }
-    LOG("INFO", "WiFi connect attempt %d", tries + 1);
+    printHelper.log("INFO", "WiFi connect attempt %d", tries + 1);
     delay(WIFI_DELAY);
     tries++;
   }
-  LOG("ERROR", "Could not connect to WiFi after %d attempts", tries);
+  printHelper.log("ERROR", "Could not connect to WiFi after %d attempts",
+                  tries);
   return false;
 }
 
@@ -33,13 +33,13 @@ void handleNotFound() {
 }
 
 void setupAP() {
-  LOG("INFO", "Setting up Access Point...");
+  printHelper.log("INFO", "Setting up Access Point...");
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI_NAME);
   dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
   server.onNotFound(handleNotFound);
   server.begin();
-  LOG("INFO", "Access Point is up and running!");
+  printHelper.log("INFO", "Access Point is up and running!");
 }
 void handleTelnet() {
   if (telnetServer.hasClient()) {
@@ -78,11 +78,12 @@ void ResetWiFi::update() {
   }
 
   if (buttonPressTime == 0) {
-    LOG("INFO", "Pressed!");
+    printHelper.log("INFO", "Pressed!");
     buttonPressTime = millis();
     return;
   }
-  LOG("INFO", "Button pressed for %d ms", millis() - buttonPressTime);
+  printHelper.log("INFO", "Button pressed for %d ms",
+                  millis() - buttonPressTime);
   if ((millis() - buttonPressTime) <= pressDuration) {
     return;
   }

@@ -9,8 +9,8 @@
 
 #include "helpers/PRINTHelper.h"
 
-extern PubSubClient* mqttClient;
-extern String MQTT_STATETOPIC;
+extern PubSubClient *mqttClient;
+extern String CHIP_ID_STRING;
 extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;

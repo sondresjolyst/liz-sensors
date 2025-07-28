@@ -16,9 +16,7 @@
 #include "PRINTHelper.h"
 
 extern String CHIP_ID_STRING;
-extern String MQTT_STATETOPIC;
 extern const char *MQTT_BROKER;
-extern const char *MQTT_HOSTNAME;
 extern String EEPROM_MQTT_USERNAME;
 extern String EEPROM_MQTT_PASSWORD;
 extern const int MQTT_PORT;
@@ -26,15 +24,23 @@ extern const int port;
 
 extern std::vector<std::pair<String, String>> discoveredDevices;
 extern PRINTHelper printHelper;
-extern WiFiClientSecure* secureClient;
-extern PubSubClient* mqttClient;
+extern WiFiClientSecure *secureClient;
+extern PubSubClient *mqttClient;
 
-void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
-                                     String MQTT_HOSTNAME);
-void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME);
-void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME);
-void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName);
-void publishWizState(String deviceName, bool lightState);
+String getGargeDeviceNameUnderscore(const String &mac);
+
+void publishGargeSensorConfig(const String &mac, const char *type,
+                              const char *unit, const char *devClass,
+                              const char *valueTemplate);
+void publishGargeSensorState(const String &mac, const char *type,
+                             const String &payload);
+void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
+                                   const char *model, const char *manufacturer);
+void publishDiscoveredDeviceState(const String &mac, const String &deviceName,
+                                  const String &payload);
+void publishDiscoveredWizState(const String &mac, const String &deviceName,
+                               bool lightState);
+
 void mqttCallback(char *topic, byte *payload, unsigned int length);
 bool mqttStatus();
 void connectToMQTT();

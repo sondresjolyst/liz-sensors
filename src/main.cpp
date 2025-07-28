@@ -20,12 +20,11 @@
 #include "controllers/SensorController.h"
 #include "controllers/VoltmeterController.h"
 #include "helpers/EEPROMHelper.h"
-#include "helpers/LogHelper.h"
 #include "helpers/MQTTHelper.h"
 #include "helpers/OTAHelper.h"
 #include "helpers/PRINTHelper.h"
-#include "helpers/WiFiHelper.h"
 #include "helpers/WIZHelper.h"
+#include "helpers/WiFiHelper.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 #include "web/WebSite.h"
@@ -65,6 +64,9 @@ constexpr int WIFI_TRIES = 15;
 constexpr int port = 38899;
 constexpr size_t EEPROM_SIZE = 512;
 
+extern const char *TOPIC_ROOT;
+extern const char *TOPIC_SET;
+
 WiFiClientSecure *secureClient = nullptr;
 PubSubClient *mqttClient = nullptr;
 Adafruit_BME280 bme;
@@ -75,9 +77,6 @@ OTAHelper *otaHelper = nullptr;
 PRINTHelper printHelper(secureClient);
 
 String CHIP_ID_STRING;
-String MQTT_HOSTNAME_STRING;
-const char *MQTT_HOSTNAME = nullptr;
-String MQTT_STATETOPIC;
 String WIFI_NAME;
 String EEPROM_MQTT_USERNAME;
 String EEPROM_MQTT_PASSWORD;
@@ -176,23 +175,24 @@ void gargeSetupAP() {
 
 void setupTime() {
   configTime(0, 0, "pool.ntp.org");
-  LOG("DEBUG", "Waiting for NTP time sync...");
+  printHelper.log("DEBUG", "Waiting for NTP time sync...");
   time_t now = time(nullptr);
   int64_t start = millis();
-  const int64_t timeout = 10000;  // 10 seconds
+  const int64_t timeout = 10000;
 
   while ((now < 8 * 3600 * 2) && (millis() - start < timeout)) {
     delay(500);
     now = time(nullptr);
     if (WiFi.status() != WL_CONNECTED) {
-      LOG("WARN", "WiFi lost, attempting reconnect...");
+      printHelper.log("WARN", "WiFi lost, attempting reconnect...");
       return;
     }
   }
   if (now < 8 * 3600 * 2) {
-    LOG("WARN", "NTP sync timeout. Time not set.");
+    printHelper.log("WARN", "NTP sync timeout. Time not set.");
   } else {
-    LOG("DEBUG", "NTP sync successful. Current time: %s", ctime(&now));
+    printHelper.log("DEBUG", "NTP sync successful. Current time: %s",
+                    ctime(&now));
   }
 }
 
@@ -207,30 +207,26 @@ bool isNightTime() {
 #define WIFI_DEBUG
 
 void setup() {
-  // WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);  // Disable brownout detector
   delay(1000);
   Serial.begin(SERIAL_PORT);
   delay(100);
 
-  uint32_t dummy = esp_random();  // Initialize hardware RNG
-  LOG("DEBUG", "Hardware RNG initialized, first value: %u", dummy);
+  uint32_t dummy = esp_random();
+  printHelper.log("DEBUG", "Hardware RNG initialized, first value: %u", dummy);
 
   uint64_t chipId = ESP.getEfuseMac();
   CHIP_ID_STRING = String(chipId, HEX);
-  MQTT_HOSTNAME_STRING = "Wemos_D1_Mini_" + CHIP_ID_STRING;
-  MQTT_HOSTNAME = MQTT_HOSTNAME_STRING.c_str();
-  MQTT_STATETOPIC = "home/storage/" + String(MQTT_HOSTNAME) + "/state";
   WIFI_NAME = "Garge " + String(CHIP_ID_STRING);
 
-  LOG("DEBUG", "Disconnecting WiFi");
+  printHelper.log("DEBUG", "Disconnecting WiFi");
   WiFi.disconnect();
 
   EEPROMHelper_begin(EEPROM_SIZE);
   delay(10);
 
   pinMode(LED_BUILTIN, OUTPUT);
-  LOG("DEBUG", "Starting...");
-  LOG("DEBUG", "Reading EEPROM...");
+  printHelper.log("DEBUG", "Starting...");
+  printHelper.log("DEBUG", "Reading EEPROM...");
 
   String EEPROM_SSID = readEEPROM(EEPROM_SSID_START, EEPROM_SSID_END);
   String EEPROM_PASSWORD =
@@ -240,15 +236,16 @@ void setup() {
   EEPROM_MQTT_PASSWORD =
       readEEPROM(EEPROM_MQTT_PASSWORD_START, EEPROM_MQTT_PASSWORD_END);
 
-  LOG("DEBUG", "EEPROM_SSID: '%s', EEPROM_PASSWORD: '%s'", EEPROM_SSID.c_str(),
-      EEPROM_PASSWORD.c_str());
-  LOG("DEBUG", "MQTT USER: '%s', MQTT PASS: '%s'", EEPROM_MQTT_USERNAME.c_str(),
-      EEPROM_MQTT_PASSWORD.c_str());
+  printHelper.log("DEBUG", "EEPROM_SSID: '%s', EEPROM_PASSWORD: '%s'",
+                  EEPROM_SSID.c_str(), EEPROM_PASSWORD.c_str());
+  printHelper.log("DEBUG", "MQTT USER: '%s', MQTT PASS: '%s'",
+                  EEPROM_MQTT_USERNAME.c_str(), EEPROM_MQTT_PASSWORD.c_str());
 
   if (EEPROM_SSID.isEmpty() || EEPROM_SSID.length() < 2 ||
       std::all_of(EEPROM_SSID.begin(), EEPROM_SSID.end(),
                   [](char c) { return c == static_cast<char>(0xFF); })) {
-    LOG("DEBUG", "SSID not found or invalid in EEPROM. Starting AP...");
+    printHelper.log("DEBUG",
+                    "SSID not found or invalid in EEPROM. Starting AP...");
     gargeSetupAP();
     server.on("/", handleRoot);
     server.on("/submit", HTTP_POST, handleSubmit);
@@ -257,10 +254,12 @@ void setup() {
     return;
   }
 
-  LOG("DEBUG", "Attempting to connect to SSID: %s", EEPROM_SSID.c_str());
+  printHelper.log("DEBUG", "Attempting to connect to SSID: %s",
+                  EEPROM_SSID.c_str());
   if (connectWifi(EEPROM_SSID, EEPROM_PASSWORD)) {
-    LOG("INFO", "WiFi connected, IP: %s", WiFi.localIP().toString().c_str());
-    LOG("DEBUG", "WiFi RSSI: %d", WiFi.RSSI());
+    printHelper.log("INFO", "WiFi connected, IP: %s",
+                    WiFi.localIP().toString().c_str());
+    printHelper.log("DEBUG", "WiFi RSSI: %d", WiFi.RSSI());
 
     setupTime();
     Serial.setDebugOutput(true);
@@ -276,10 +275,10 @@ void setup() {
     } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
       voltageSensorSetup();
     } else {
-      LOG("ERROR", "Please set GARGE_TYPE");
+      printHelper.log("ERROR", "Please set GARGE_TYPE");
     }
 
-    server.on("/", webpage_status);  // Status page handler
+    server.on("/", webpage_status);
 
     if (otaHelper != nullptr) {
       delete otaHelper;
@@ -293,15 +292,15 @@ void setup() {
 
     wizSetup();
   } else {
-    LOG("WARN", "WiFi connection failed, starting AP mode.");
+    printHelper.log("WARN", "WiFi connection failed, starting AP mode.");
     gargeSetupAP();
-    server.on("/", handleRoot);  // Setup page handler
+    server.on("/", handleRoot);
   }
   server.on("/submit", HTTP_POST, handleSubmit);
   server.on("/clear-wifi", HTTP_POST, handleClearWiFi);
   server.begin();
 
-  LOG("INFO", "%s %s started", OTA_PRODUCT_NAME.c_str(), VERSION);
+  printHelper.log("INFO", "%s %s started", OTA_PRODUCT_NAME.c_str(), VERSION);
 }
 
 void blinkLED(int count) {
@@ -347,10 +346,13 @@ void discoverAndSubscribe() {
 
       if (isWizDevice(moduleName)) {
         std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
-        sendMQTTWizDiscoveryMsg(deviceIP, deviceName);
+        publishDiscoveredDeviceConfig(CHIP_ID_STRING, deviceName.c_str(),
+                                      moduleName.c_str(), "Wiz");
 
-        std::string stateTopic = "home/storage/" + deviceName + "/set";
-        mqttClient->subscribe(stateTopic.c_str());
+        String setTopic = String(TOPIC_ROOT) +
+                          getGargeDeviceNameUnderscore(CHIP_ID_STRING) + "/" +
+                          deviceName.c_str() + TOPIC_SET;
+        mqttClient->subscribe(setTopic.c_str());
       }
     }
   }
@@ -380,7 +382,7 @@ void checkSerialForCredentials() {
 
       EEPROM_MQTT_USERNAME = username;
       EEPROM_MQTT_PASSWORD = password;
-      LOG("INFO", "MQTT credentials saved");
+      printHelper.log("INFO", "MQTT credentials saved");
     }
   }
 }
@@ -396,7 +398,7 @@ void loop() {
       apStartTime = millis();
     }
     if (millis() - apStartTime > 30UL * 60UL * 1000UL) {  // 30 minutes
-      LOG("DEBUG", "Restarting after 30 minutes in AP mode");
+      printHelper.log("DEBUG", "Restarting after 30 minutes in AP mode");
       ESP.restart();
     }
     return;
@@ -405,13 +407,14 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     static int16_t lastAttempt = 0;
     if (millis() - lastAttempt > 5000) {
-      LOG("DEBUG", "WiFi lost, attempting reconnect...");
+      printHelper.log("DEBUG", "WiFi lost, attempting reconnect...");
       String EEPROM_SSID = readEEPROM(EEPROM_SSID_START, EEPROM_SSID_END);
       String EEPROM_PASSWORD =
           readEEPROM(EEPROM_PASSWORD_START, EEPROM_PASSWORD_END);
       bool wifiResult = connectWifi(EEPROM_SSID, EEPROM_PASSWORD);
-      LOG("DEBUG", "WiFi reconnect result: %d, status: %d, IP: %s", wifiResult,
-          WiFi.status(), WiFi.localIP().toString().c_str());
+      printHelper.log("DEBUG", "WiFi reconnect result: %d, status: %d, IP: %s",
+                      wifiResult, WiFi.status(),
+                      WiFi.localIP().toString().c_str());
       lastAttempt = millis();
     }
     server.handleClient();
@@ -433,13 +436,14 @@ void loop() {
     if (isValid(EEPROM_MQTT_USERNAME) && isValid(EEPROM_MQTT_PASSWORD)) {
       if (millis() - lastMqttAttempt > mqttReconnectDelay) {
         uint32_t freeHeap = ESP.getFreeHeap();
-        LOG("DEBUG", "Free heap before MQTT connect: %u", freeHeap);
+        printHelper.log("DEBUG", "Free heap before MQTT connect: %u", freeHeap);
         if (freeHeap < 200000) {
-          LOG("ERROR", "Not enough heap for MQTT TLS connection. "
-                       "Skipping connect attempt.");
+          printHelper.log("ERROR", "Not enough heap for MQTT TLS connection. "
+                                   "Skipping connect attempt.");
         } else {
           uint32_t entropy = esp_random();
-          LOG("DEBUG", "esp_random() before MQTT connect: %u", entropy);
+          printHelper.log("DEBUG", "esp_random() before MQTT connect: %u",
+                          entropy);
 
           if (secureClient) {
             delete secureClient;
@@ -449,9 +453,10 @@ void loop() {
           secureClient->setHandshakeTimeout(30);
           mqttClient->setClient(*secureClient);
 
-          LOG("DEBUG", "Connecting to MQTT...");
+          printHelper.log("DEBUG", "Connecting to MQTT...");
           connectToMQTT();
-          LOG("DEBUG", "MQTT status after connect: %d", mqttStatus());
+          printHelper.log("DEBUG", "MQTT status after connect: %d",
+                          mqttStatus());
         }
         lastMqttAttempt = millis();
       }
@@ -467,7 +472,7 @@ void loop() {
   if (millis() - lastOtaCheck > otaCheckInterval) {
     lastOtaCheck = millis();
     if (isNightTime()) {
-      LOG("DEBUG", "Night time OTA check...");
+      printHelper.log("DEBUG", "Night time OTA check...");
       otaHelper->checkAndUpdateFromManifest(OTA_MANIFEST_URL,
                                             OTA_PRODUCT_NAME.c_str(), VERSION);
     }

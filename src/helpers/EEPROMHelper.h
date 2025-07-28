@@ -5,10 +5,14 @@
 
 #include <Arduino.h>
 
+#include "PRINTHelper.h"
+
 extern const int EEPROM_SSID_START;
 extern const int EEPROM_SSID_END;
 extern const int EEPROM_PASSWORD_START;
 extern const int EEPROM_PASSWORD_END;
+
+extern PRINTHelper printHelper;
 
 void EEPROMHelper_begin(size_t size);
 void writeEEPROM(unsigned int start, int end, String data);

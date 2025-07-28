@@ -10,14 +10,12 @@
 
 class PRINTHelper {
  public:
-  explicit PRINTHelper(WiFiClientSecure* client);
+  explicit PRINTHelper(WiFiClientSecure *client);
 
-  void print(const String &message);
-  void println(const String &message);
-  void printf(const char *format, ...);
+  void log(const char *level, const char *format, ...);
 
  private:
-  WiFiClientSecure* _client;
+  WiFiClientSecure *_client;
 };
 
 #endif  // SRC_HELPERS_PRINTHELPER_H_

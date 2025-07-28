@@ -11,7 +11,7 @@
 
 extern WebServer server;
 extern WiFiClient serverClient;
-extern PubSubClient* mqttClient;
+extern PubSubClient *mqttClient;
 
 String getWifiOptions() {
   int n = WiFi.scanNetworks();

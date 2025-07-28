@@ -2,7 +2,7 @@
 
 #include <esp_sleep.h>
 
-#include "../helpers/LogHelper.h"
+#include "../helpers/MQTTHelper.h"
 #include "VoltmeterController.h"
 
 RTC_DATA_ATTR float averageVoltage = 0;
@@ -16,43 +16,24 @@ RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
 
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
-  LOG("INFO", "Sensor Value value: %d", sensorValue);
-
-  printHelper.print("sensorValue: ");
-  printHelper.print(String(sensorValue));
-  printHelper.println(" V");
+  printHelper.log("INFO", "Sensor Value value: %d", sensorValue);
 
   // Calculate the measured voltage at the divider output
   float voltageMeasured = (ANALOG_VOLTAGE / ANALOG_RESOLUTION) * sensorValue;
-  LOG("INFO", "voltageMeasured: %.5f V", voltageMeasured);
-
-  printHelper.print("voltageMeasured: ");
-  printHelper.print(String(voltageMeasured, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "voltageMeasured: %.5f V", voltageMeasured);
 
   float vinTest = voltageMeasured * ((R1 + R2) / R2);
-  LOG("INFO", "vinTest: %.5f V", vinTest);
-
-  printHelper.print("vinTest: ");
-  printHelper.print(String(vinTest, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinTest: %.5f V", vinTest);
 
   // calculated correction
   float vinMeasuredCorrected =
       voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
-  LOG("INFO", "vinMeasuredCorrected: %.5f V", vinMeasuredCorrected);
-
-  printHelper.print("vinMeasuredCorrected: ");
-  printHelper.print(String(vinMeasuredCorrected, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinMeasuredCorrected: %.5f V", vinMeasuredCorrected);
 
   // exponential correction
   float vinTestCorrectedExponential = a * pow(vinTest, b);
-  LOG("INFO", "vinTestCorrectedExponential: %.5f V", vinTestCorrectedExponential);
-
-  printHelper.print("vinTestCorrectedExponential: ");
-  printHelper.print(String(vinTestCorrectedExponential, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinTestCorrectedExponential: %.5f V",
+                  vinTestCorrectedExponential);
 
   return vinTestCorrectedExponential;
 }
@@ -71,24 +52,23 @@ void voltageSensorSetup() {
 }
 
 void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings) {
-  LOG("INFO", "Checking if reading failed");
+  printHelper.log("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
-    LOG("ERROR", "Reading: %s", String(*reading));
+    printHelper.log("ERROR", "Reading: %s", String(*reading));
     (*failedReadings) += 1;
-    LOG("ERROR", "Failed count: %s", String(*failedReadings));
+    printHelper.log("ERROR", "Failed count: %s", String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
     }
   } else {
-    LOG("INFO", "Reading OK");
-    LOG("INFO", "Reading: %s", String(*reading));
+    printHelper.log("INFO", "Reading OK");
+    printHelper.log("INFO", "Reading: %s", String(*reading));
     *failedReadings = 0;
   }
 }
 
 void deepSleepForHour() {
-  printHelper.println("Entering deep sleep for 1 hour");
-  LOG("INFO", "Entering deep sleep for 1 hour");
+  printHelper.log("INFO", "Entering deep sleep for 1 hour");
   esp_sleep_enable_timer_wakeup(VOLTMETER_SLEEP_INTERVAL_US);
   Serial.flush();
   esp_deep_sleep_start();
@@ -116,15 +96,9 @@ void readAndWriteVoltageSensor() {
 
   size_t n = serializeJson(doc, buffer);
 
-  bool published = mqttClient->publish(MQTT_STATETOPIC.c_str(), buffer, n);
+  publishGargeSensorState(CHIP_ID_STRING, "voltage", String(buffer));
 
-  LOG("INFO", "Published: %s", published ? "true" : "false");
-  printHelper.print("Published: ");
-  printHelper.println(String(published));
-
-  LOG("INFO", "Battery Voltage: %.5f V", averageVoltage);
-  printHelper.print("Battery Voltage: ");
-  printHelper.println(String(averageVoltage));
+  printHelper.log("INFO", "Battery Voltage: %.5f V", averageVoltage);
 
   deepSleepForHour();
 }
