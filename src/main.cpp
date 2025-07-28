@@ -323,7 +323,7 @@ void blinkLED(int count) {
   }
 }
 
-// Filter out "SOCKET" or "SHRGBC"
+// Returns true if "SOCKET" or "SHRGBC"
 bool isWizDevice(const std::string &moduleName) {
   return moduleName.find("SOCKET") != std::string::npos ||
          moduleName.find("SHRGBC") != std::string::npos;

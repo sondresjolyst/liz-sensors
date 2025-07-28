@@ -77,7 +77,7 @@ void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
   String setTopic = deviceTopic + TOPIC_SET;
 
   DynamicJsonDocument doc(1024);
-  char buffer[512];
+  char buffer[1024];
 
   doc["name"] = deviceName;
   doc["command_topic"] = setTopic;
@@ -93,13 +93,18 @@ void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
   doc["device"]["model"] = model;
   doc["device"]["manufacturer"] = manufacturer;
 
-  size_t n = serializeJson(doc, buffer);
+  size_t n = serializeJson(doc, buffer, sizeof(buffer));
   printHelper.log("INFO",
                   "Sending discovery for: %s discoveryTopic: %s size: %u",
                   deviceName.c_str(), configTopic.c_str(), (unsigned)n);
+  printHelper.log("DEBUG", "Payload size: %u", (unsigned)n);
   printHelper.log("DEBUG", "message: %s", buffer);
 
   bool publish = mqttClient->publish(configTopic.c_str(), buffer, n);
+  if (!publish) {
+    printHelper.log("ERROR", "Publish failed! MQTT state: %d",
+                    mqttClient->state());
+  }
   printHelper.log("INFO", "Publishing discovery for %s: %s",
                   configTopic.c_str(), publish ? "Success" : "Failed");
 }
@@ -173,7 +178,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     } else {
       bool state = doc["result"]["state"];
 
-      // Filter out "SOCKET" or "SHRGBC"
+      // Extract "SOCKET" or "SHRGBC"
       std::smatch match;
       if (std::regex_search(moduleName, match, std::regex("(SOCKET|SHRGBC)"))) {
         moduleName = match.str();
@@ -195,7 +200,7 @@ void connectToMQTT() {
                   MQTT_BROKER);
 
   mqttClient->setServer(MQTT_BROKER, MQTT_PORT);
-  mqttClient->setBufferSize(512);
+  mqttClient->setBufferSize(1024);
   mqttClient->setCallback(mqttCallback);
 
   String lastUsername = EEPROM_MQTT_USERNAME;
