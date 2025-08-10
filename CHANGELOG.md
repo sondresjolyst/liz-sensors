@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.1.0...v1.2.0) (2025-08-10)
+
+
+### Features
+
+* deep sleep ([#52](https://github.com/sondresjolyst/liz-sensors/issues/52)) ([0139c0d](https://github.com/sondresjolyst/liz-sensors/commit/0139c0dd5e194e585fd49ba69620a2ce6850fd93))
+* emqx script for creating users and acl ([34abec9](https://github.com/sondresjolyst/liz-sensors/commit/34abec9ae40e6c37e34738c19f30b79af0d41b01))
+* esp32 ([aac173f](https://github.com/sondresjolyst/liz-sensors/commit/aac173f91aa43422f035a25af99483b9dd24c71a))
+* garge mqtt, chip naming ([93db7f6](https://github.com/sondresjolyst/liz-sensors/commit/93db7f63a2b4ad7946b18c267bcb188fe8ae3076))
+* move to emqx and logging ([268216d](https://github.com/sondresjolyst/liz-sensors/commit/268216d0e0aa388f3afb5a22520d57a8c60dfb11))
+* ota ([#42](https://github.com/sondresjolyst/liz-sensors/issues/42)) ([fa102e5](https://github.com/sondresjolyst/liz-sensors/commit/fa102e535304ba1b2b8679088578786951ce5ac2))
+* reconnect wifi ([#41](https://github.com/sondresjolyst/liz-sensors/issues/41)) ([d379210](https://github.com/sondresjolyst/liz-sensors/commit/d379210903855eb51af8a8aa1a10627c74eb0c7d))
+* restart esp after 30min in ap mode ([#47](https://github.com/sondresjolyst/liz-sensors/issues/47)) ([b1f367a](https://github.com/sondresjolyst/liz-sensors/commit/b1f367a2116ffc1238ec697edb8ca4a9438ff282))
+
 ## [1.1.0](https://github.com/sondresjolyst/ReadTempAndHumidity/compare/v1.0.0...v1.1.0) (2024-12-31)
 
 
