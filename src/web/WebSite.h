@@ -11,7 +11,7 @@
 
 extern WebServer server;
 extern WiFiClient serverClient;
-extern PubSubClient client;
+extern PubSubClient *mqttClient;
 
 String getWifiOptions();
 void handleRoot();

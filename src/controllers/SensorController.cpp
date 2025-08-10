@@ -1,6 +1,7 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
 #include "SensorController.h"
+#include "../helpers/MQTTHelper.h"
 
 #ifndef I2C_SDA_PIN
 #define I2C_SDA_PIN 18
@@ -31,7 +32,7 @@ int32_t failedHumidReadings = 0;
 
 void environmentalSensorSetup(const char *sensorType) {
   if (strcmp(sensorType, "dht") == 0) {
-    Serial.printf("Sensor type is: %s\n", sensorType);
+    printHelper.log("INFO", "Sensor type is: %s", sensorType);
     dht.begin();
 
     for (int i = 0; i < READING_BUFFER; i++) {
@@ -41,12 +42,13 @@ void environmentalSensorSetup(const char *sensorType) {
       totalHumid += humidReadings[i];
     }
   } else if (strcmp(sensorType, "bme") == 0) {
-    Serial.printf("Sensor type is: %s\n", sensorType);
+    printHelper.log("INFO", "Sensor type is: %s", sensorType);
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     if (!bme.begin(0x76)) {
-      Serial.println("Could not find a valid BME280 sensor, check wiring!");
-      while (1) {
-      }
+      printHelper.log("ERROR",
+                      "Could not find a valid BME280 sensor, check wiring!");
+      // while (1) {
+      // }
     }
     for (int i = 0; i < READING_BUFFER; i++) {
       tempReadings[i] = bme.readTemperature() + BMEtempOffset;
@@ -55,22 +57,22 @@ void environmentalSensorSetup(const char *sensorType) {
       totalHumid += humidReadings[i];
     }
   } else {
-    Serial.print("Error: No sensor type selected!");
+    printHelper.log("ERROR", "No sensor type selected!");
   }
 }
 
 void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
-  printHelper.println("Checking if reading failed");
+  printHelper.log("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
-    printHelper.printf("Reading: %s", String(*reading));
     (*failedReadings) += 1;
-    printHelper.printf("Failed count: %s", String(*failedReadings));
+    printHelper.log("ERROR", "Reading: %s, Failed count: %s", String(*reading),
+                    String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
     }
   } else {
-    printHelper.println("Reading OK");
-    printHelper.printf("Reading: %s", String(*reading));
+    printHelper.log("INFO", "Reading OK");
+    printHelper.log("INFO", "Reading: %s", String(*reading));
     *failedReadings = 0;
   }
 }
@@ -107,55 +109,33 @@ void readAndWriteEnvironmentalSensors(const char *sensorType) {
     checkAndRestartIfFailed(&totalTemp, &failedTempReadings);
     checkAndRestartIfFailed(&currentHumidReadings, &failedHumidReadings);
 
-    // Debugging
-    printHelper.print("tempReadings: ");
-    printHelper.println(String(tempReadings[readIndex]));
-    printHelper.print("humidReadings: ");
-    printHelper.println(String(humidReadings[readIndex]));
-    printHelper.print("totalTemp: ");
-    printHelper.println(String(totalTemp));
-    printHelper.print("totalHumid: ");
-    printHelper.println(String(totalHumid));
+    printHelper.log("INFO", "tempReadings; %.2f °C, humidReadings: %.2f %%",
+        tempReadings[readIndex],
+        humidReadings[readIndex]);
+    printHelper.log("INFO", "totalTemp: %.2f °C, totalHumid: %.2f %%",
+        totalTemp, totalHumid);
 
     readIndex = (readIndex + 1) % arrayLength;
 
-    // Debugging
-    printHelper.print("readIndex: ");
-    printHelper.println(String(readIndex));
-    printHelper.print("arrayLength: ");
-    printHelper.println(String(arrayLength));
+    printHelper.log("INFO", "readIndex: %d, arrayLength: %d", readIndex,
+                    arrayLength);
 
     averageTemp = totalTemp / arrayLength;
     averageHumid = totalHumid / arrayLength;
 
-    DynamicJsonDocument doc(1024);
-    char buffer[256];
+    DynamicJsonDocument tempDoc(256);
+    char tempBuffer[128];
+    tempDoc["value"] = averageTemp;
+    size_t tempN = serializeJson(tempDoc, tempBuffer);
+    publishGargeSensorState(CHIP_ID, "temperature", String(tempBuffer));
 
-    doc["temperature"] = averageTemp;
-    doc["humidity"] = averageHumid;
+    DynamicJsonDocument humidDoc(256);
+    char humidBuffer[128];
+    humidDoc["value"] = averageHumid;
+    size_t humidN = serializeJson(humidDoc, humidBuffer);
+    publishGargeSensorState(CHIP_ID, "humidity", String(humidBuffer));
 
-    size_t n = serializeJson(doc, buffer);
-
-    bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
-
-    Serial.println("Published: ");
-    Serial.println(published);
-    // Debugging
-    printHelper.print("Published: ");
-    printHelper.println(String(published));
-
-    Serial.print("Temperature: ");
-    Serial.print(averageTemp);
-    Serial.println(" °C");
-    // Debugging
-    printHelper.print("averageTemp: ");
-    printHelper.println(String(averageTemp));
-
-    Serial.print("Humidity: ");
-    Serial.print(averageHumid);
-    Serial.println(" %");
-    // Debugging
-    printHelper.print("averageHumid: ");
-    printHelper.println(String(averageHumid));
+    printHelper.log("INFO", "Temperature: %.2f °C, Humidity: %.2f %%",
+                    averageTemp, averageHumid);
   }
 }

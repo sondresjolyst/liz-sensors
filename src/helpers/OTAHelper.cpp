@@ -12,33 +12,33 @@
 
 #include "OTAHelper.h"
 
-void onStart() { Serial.println("Start"); }
+void onStart() { printHelper.log("INFO", "OTA Start"); }
 
-void onEnd() { Serial.println("\nEnd"); }
+void onEnd() { printHelper.log("INFO", "OTA End"); }
 
 void onProgress(unsigned int progress, unsigned int total) {
-  Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  printHelper.log("INFO", "OTA Progress: %u%%", (progress / (total / 100)));
 }
 
 void onError(ota_error_t error) {
-  Serial.printf("Error [%u]: ", error);
+  printHelper.log("ERROR", "OTA Error [%u]: ", error);
   if (error == OTA_AUTH_ERROR)
-    Serial.println("Auth Failed");
+    printHelper.log("ERROR", "Auth Failed");
   else if (error == OTA_BEGIN_ERROR)
-    Serial.println("Begin Failed");
+    printHelper.log("ERROR", "Begin Failed");
   else if (error == OTA_CONNECT_ERROR)
-    Serial.println("Connect Failed");
+    printHelper.log("ERROR", "Connect Failed");
   else if (error == OTA_RECEIVE_ERROR)
-    Serial.println("Receive Failed");
+    printHelper.log("ERROR", "Receive Failed");
   else if (error == OTA_END_ERROR)
-    Serial.println("End Failed");
+    printHelper.log("ERROR", "End Failed");
 }
 
 OTAHelper::OTAHelper() {}
 
 void OTAHelper::setup() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Error: No WiFi connection when setting up OTAHelper");
+    printHelper.log("ERROR", "No WiFi connection when setting up OTAHelper");
     return;
   }
 
@@ -48,31 +48,36 @@ void OTAHelper::setup() {
   ArduinoOTA.onError(onError);
 
   ArduinoOTA.begin();
-  Serial.println("OTA is ready");
+  printHelper.log("INFO", "OTA is ready");
 }
 
 void OTAHelper::loop() { ArduinoOTA.handle(); }
 
-int versionCompare(const char* v1, const char* v2) {
-    int maj1, min1, pat1;
-    int maj2, min2, pat2;
-    sscanf(v1, "v%d.%d.%d", &maj1, &min1, &pat1);
-    sscanf(v2, "v%d.%d.%d", &maj2, &min2, &pat2);
+int versionCompare(const char *v1, const char *v2) {
+  int maj1, min1, pat1;
+  int maj2, min2, pat2;
+  sscanf(v1, "v%d.%d.%d", &maj1, &min1, &pat1);
+  sscanf(v2, "v%d.%d.%d", &maj2, &min2, &pat2);
 
-    if (maj1 != maj2) return maj1 - maj2;
-    if (min1 != min2) return min1 - min2;
-    return pat1 - pat2;
+  if (maj1 != maj2)
+    return maj1 - maj2;
+  if (min1 != min2)
+    return min1 - min2;
+  return pat1 - pat2;
 }
 
 void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
                                            const char *deviceName,
                                            const char *currentVersion) {
+  OTA_IN_PROGRESS = true;
+
   HTTPClient http;
   http.begin(manifestUrl);
   int httpCode = http.GET();
   if (httpCode != 200) {
-    Serial.printf("Failed to fetch manifest: %d\n", httpCode);
+    printHelper.log("ERROR", "Failed to fetch manifest: %d", httpCode);
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -82,7 +87,8 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   DynamicJsonDocument doc(4096);
   DeserializationError err = deserializeJson(doc, payload);
   if (err) {
-    Serial.println("Failed to parse manifest JSON");
+    printHelper.log("ERROR", "Failed to parse manifest JSON");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -95,38 +101,43 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
     const char *bin_url = entry["bin_url"];
     if (name && version && bin_url && strcmp(name, deviceName) == 0) {
       if (!latest_version || versionCompare(version, latest_version) > 0) {
-          latest_version = version;
-          latest_bin_url = bin_url;
+        latest_version = version;
+        latest_bin_url = bin_url;
       }
     }
   }
 
   if (!latest_version || !latest_bin_url) {
-    Serial.println("No matching device or missing fields in manifest");
+    printHelper.log("ERROR",
+                    "No matching device or missing fields in manifest");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
   if (strcmp(latest_version, currentVersion) == 0) {
-    Serial.println("Already up to date");
+    printHelper.log("INFO", "Already up to date");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
-  Serial.printf("New version available: %s\n", latest_version);
-  Serial.println("Starting OTA update...");
+  printHelper.log("INFO", "New version available: %s", latest_version);
+  printHelper.log("INFO", "Starting OTA update...");
 
   http.begin(latest_bin_url);
   int binCode = http.GET();
   if (binCode != 200) {
-    Serial.printf("Failed to fetch bin: %d\n", binCode);
+    printHelper.log("ERROR", "Failed to fetch bin: %d", binCode);
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
   int contentLength = http.getSize();
   bool canBegin = Update.begin(contentLength);
   if (!canBegin) {
-    Serial.println("Not enough space for OTA");
+    printHelper.log("ERROR", "Not enough space for OTA");
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -134,10 +145,11 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   size_t written = Update.writeStream(*stream);
 
   if (written == contentLength && Update.end()) {
-    Serial.println("OTA Success! Rebooting...");
+    printHelper.log("INFO", "OTA Success! Rebooting...");
     ESP.restart();
   } else {
-    Serial.println("OTA Failed!");
+    printHelper.log("ERROR", "OTA Failed!");
+    OTA_IN_PROGRESS = false;
   }
   http.end();
 }

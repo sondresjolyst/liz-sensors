@@ -1,6 +1,7 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
 #include <EEPROM.h>
+
 #include "EEPROMHelper.h"
 
 static bool eeprom_initialized = false;
@@ -13,7 +14,8 @@ void EEPROMHelper_begin(size_t size) {
 }
 
 void writeEEPROM(unsigned int start, int end, String data) {
-  if (!eeprom_initialized) return;
+  if (!eeprom_initialized)
+    return;
   unsigned int size = end - start;
   if (data.length() > size) {
     data = data.substring(0, size);
@@ -29,7 +31,8 @@ void writeEEPROM(unsigned int start, int end, String data) {
 }
 
 String readEEPROM(int start, int end) {
-  if (!eeprom_initialized) return "";
+  if (!eeprom_initialized)
+    return "";
   String res = "";
   for (int i = start; i <= end; i++) {
     res += static_cast<char>(EEPROM.read(i));
@@ -37,12 +40,23 @@ String readEEPROM(int start, int end) {
   return res;
 }
 
+void writeEEPROMInt(unsigned int start, int end, int value) {
+  writeEEPROM(start, end, String(value));
+}
+
+int readEEPROMInt(int start, int end) {
+  String val = readEEPROM(start, end);
+  return val.toInt();
+}
+
 void clearWifiCredentials() {
-  if (!eeprom_initialized) return;
+  if (!eeprom_initialized)
+    return;
   for (int i = EEPROM_SSID_START; i < EEPROM_PASSWORD_END; i++) {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();
-  Serial.println("Restarting ESP...");
+  printHelper.log("INFO", "Cleared WiFi credentials");
+  printHelper.log("INFO", "Restarting ESP...");
   ESP.restart();
 }

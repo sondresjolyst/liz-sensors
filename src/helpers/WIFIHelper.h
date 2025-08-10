@@ -7,8 +7,10 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 #include "EEPROMHelper.h"
+#include "PRINTHelper.h"
 
 extern String WIFI_NAME;
 extern const int DNS_PORT;
@@ -21,8 +23,9 @@ extern const int WIFI_TRIES;
 
 extern DNSServer dnsServer;
 extern WiFiServer telnetServer;
-extern WiFiClient serverClient;
+extern WiFiClientSecure *secureClient;
 extern WebServer server;
+extern PRINTHelper printHelper;
 
 const size_t kBufferSize = 256;
 

@@ -6,8 +6,11 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 
+#include "PRINTHelper.h"
+
 constexpr unsigned int localUdpPort = 38899;
 extern WiFiUDP Udp;
+extern PRINTHelper printHelper;
 
 void wizSetup();
 

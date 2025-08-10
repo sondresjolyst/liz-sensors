@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <PubSubClient.h>
+#include <WiFiClientSecure.h>
 #include <Wire.h>
 
 #include <cmath>
@@ -17,9 +18,9 @@
 
 extern DHT dht;
 extern Adafruit_BME280 bme;
-extern WiFiClient serverClient;
-extern PubSubClient client;
-extern String MQTT_STATETOPIC;
+extern WiFiClientSecure *secureClient;
+extern PubSubClient *mqttClient;
+extern String CHIP_ID;
 extern PRINTHelper printHelper;
 
 extern float BMEtempOffset;

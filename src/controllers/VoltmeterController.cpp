@@ -1,7 +1,9 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#include "VoltmeterController.h"
 #include <esp_sleep.h>
+
+#include "../helpers/MQTTHelper.h"
+#include "VoltmeterController.h"
 
 RTC_DATA_ATTR float averageVoltage = 0;
 RTC_DATA_ATTR float voltageReadings[READING_VOLTAGE_BUFFER];
@@ -14,52 +16,24 @@ RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
 
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
-  Serial.print("Sensor Value: ");
-  Serial.println(sensorValue);
-
-  printHelper.print("sensorValue: ");
-  printHelper.print(String(sensorValue));
-  printHelper.println(" V");
+  printHelper.log("INFO", "Sensor Value value: %d", sensorValue);
 
   // Calculate the measured voltage at the divider output
   float voltageMeasured = (ANALOG_VOLTAGE / ANALOG_RESOLUTION) * sensorValue;
-  Serial.print("voltageMeasured: ");
-  Serial.print(voltageMeasured, 5);
-  Serial.println(" V");
-
-  printHelper.print("voltageMeasured: ");
-  printHelper.print(String(voltageMeasured, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "voltageMeasured: %.5f V", voltageMeasured);
 
   float vinTest = voltageMeasured * ((R1 + R2) / R2);
-  Serial.print("vinTest: ");
-  Serial.print(vinTest, 5);
-  Serial.println(" V");
-
-  printHelper.print("vinTest: ");
-  printHelper.print(String(vinTest, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinTest: %.5f V", vinTest);
 
   // calculated correction
   float vinMeasuredCorrected =
       voltageMeasured * ((R1 + R2) / R2 * CORRECTION_FACTOR);
-  Serial.print("vinMeasuredCorrected: ");
-  Serial.print(vinMeasuredCorrected, 5);
-  Serial.println(" V");
-
-  printHelper.print("vinMeasuredCorrected: ");
-  printHelper.print(String(vinMeasuredCorrected, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinMeasuredCorrected: %.5f V", vinMeasuredCorrected);
 
   // exponential correction
   float vinTestCorrectedExponential = a * pow(vinTest, b);
-  Serial.print("vinTestCorrectedExponential: ");
-  Serial.print(vinTestCorrectedExponential, 5);
-  Serial.println(" V");
-
-  printHelper.print("vinTestCorrectedExponential: ");
-  printHelper.print(String(vinTestCorrectedExponential, 5));
-  printHelper.println(" V");
+  printHelper.log("INFO", "vinTestCorrectedExponential: %.5f V",
+                  vinTestCorrectedExponential);
 
   return vinTestCorrectedExponential;
 }
@@ -78,31 +52,37 @@ void voltageSensorSetup() {
 }
 
 void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings) {
-  printHelper.println("Checking if reading failed");
+  printHelper.log("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
-    printHelper.printf("Reading: %s", String(*reading));
+    printHelper.log("ERROR", "Reading: %s", String(*reading));
     (*failedReadings) += 1;
-    printHelper.printf("Failed count: %s", String(*failedReadings));
+    printHelper.log("ERROR", "Failed count: %s", String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
     }
   } else {
-    printHelper.println("Reading OK");
-    printHelper.printf("Reading: %s", String(*reading));
+    printHelper.log("INFO", "Reading OK");
+    printHelper.log("INFO", "Reading: %s", String(*reading));
     *failedReadings = 0;
   }
 }
 
 void deepSleepForHour() {
-  printHelper.println("Entering deep sleep for 1 hour");
-  Serial.println("Entering deep sleep for 1 hour");
-  esp_sleep_enable_timer_wakeup(
-      VOLTMETER_SLEEP_INTERVAL_US);
+  printHelper.log("INFO", "Entering deep sleep for 1 hour");
+  esp_sleep_enable_timer_wakeup(VOLTMETER_SLEEP_INTERVAL_US);
   Serial.flush();
   esp_deep_sleep_start();
 }
 
 void readAndWriteVoltageSensor() {
+  static uint32_t lastVoltageAttempt = 0;
+  const uint32_t voltageReadInterval = 5000;  // 5 seconds
+
+  if (millis() - lastVoltageAttempt < voltageReadInterval) {
+    return;
+  }
+  lastVoltageAttempt = millis();
+
   if (!bufferFilled) {
     voltageSensorSetup();
   }
@@ -120,25 +100,22 @@ void readAndWriteVoltageSensor() {
   DynamicJsonDocument doc(1024);
   char buffer[256];
 
-  doc["voltage"] = averageVoltage;
-
+  doc["value"] = averageVoltage;
   size_t n = serializeJson(doc, buffer);
 
-  bool published = client.publish(MQTT_STATETOPIC.c_str(), buffer, n);
+  bool publishSuccess =
+      publishGargeSensorState(CHIP_ID, "voltage", String(buffer));
 
-  Serial.print("Published: ");
-  Serial.println(published);
-  // Debugging
-  printHelper.print("Published: ");
-  printHelper.println(String(published));
+  printHelper.log("INFO", "Battery Voltage: %.5f V", averageVoltage);
 
-  Serial.print("Battery Voltage: ");
-  Serial.print(averageVoltage);
-  Serial.println(" V");
-  // Debugging
-  printHelper.print("Battery Voltage: ");
-  printHelper.println(String(averageVoltage));
+  if (!mqttStatus()) {
+    printHelper.log("WARN", "MQTT not connected, skipping voltage publish.");
+    return;
+  }
 
-  // Go to deep sleep for 1 hour after publishing
-  deepSleepForHour();
+  if (publishSuccess) {
+    deepSleepForHour();
+  } else {
+    printHelper.log("WARN", "Publish failed, not entering deep sleep.");
+  }
 }

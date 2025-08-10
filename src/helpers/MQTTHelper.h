@@ -6,6 +6,7 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 #include <regex>
 #include <string>
@@ -14,26 +15,34 @@
 #include "../lib/liz/src/liz.h"
 #include "PRINTHelper.h"
 
-extern String CHIP_ID_STRING;
-extern String MQTT_STATETOPIC;
+extern String CHIP_ID;
 extern const char *MQTT_BROKER;
-extern const char *MQTT_HOSTNAME;
-extern const char *MQTT_PASS;
-extern const char *MQTT_USER;
+extern String EEPROM_MQTT_USERNAME;
+extern String EEPROM_MQTT_PASSWORD;
 extern const int MQTT_PORT;
 extern const int port;
 
 extern std::vector<std::pair<String, String>> discoveredDevices;
 extern PRINTHelper printHelper;
-extern WiFiClient espClient;
-extern PubSubClient client;
+extern WiFiClientSecure *secureClient;
+extern PubSubClient *mqttClient;
 
-void sendMQTTTemperatureDiscoveryMsg(String MQTT_STATETOPIC,
-                                     String MQTT_HOSTNAME);
-void sendMQTTHumidityDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME);
-void sendMQTTVoltageDiscoveryMsg(String MQTT_STATETOPIC, String MQTT_HOSTNAME);
-void sendMQTTWizDiscoveryMsg(std::string deviceIP, std::string deviceName);
-void publishWizState(String deviceName, bool lightState);
+String getGargeDeviceNameUnderscore(const String &mac);
+
+void publishGargeSensorConfig(const String &mac, const char *type,
+                              const char *unit, const char *devClass,
+                              const char *valueTemplate);
+bool publishGargeSensorState(const String &mac, const char *type,
+                             const String &payload);
+void publishDiscoveredDeviceConfig(const String &deviceName, const char *model,
+                                   const char *manufacturer);
+void publishDiscoveredDeviceState(const String &mac, const String &deviceName,
+                                  const String &payload);
+void publishDiscoveredWizState(const String &mac, const String &deviceName,
+                               bool lightState);
+void publishGargeDiscoveryEvent(const String &mac, const String &deviceName,
+                                const String &type);
+
 void mqttCallback(char *topic, byte *payload, unsigned int length);
 bool mqttStatus();
 void connectToMQTT();

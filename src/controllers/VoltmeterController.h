@@ -9,8 +9,8 @@
 
 #include "helpers/PRINTHelper.h"
 
-extern PubSubClient client;
-extern String MQTT_STATETOPIC;
+extern PubSubClient *mqttClient;
+extern String CHIP_ID;
 extern PRINTHelper printHelper;
 
 const int ANALOG_IN_PIN = A0;
@@ -49,6 +49,9 @@ const int READING_VOLTAGE_BUFFER = 5;
 // Deep sleep interval for voltmeter (in microseconds)
 constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US =
     3600ULL * 1000000ULL;  // 1 hour
+
+// constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US =
+//     60000000ULL;  // 1 min
 
 extern float averageVoltage;
 extern float voltageReadings[READING_VOLTAGE_BUFFER];
