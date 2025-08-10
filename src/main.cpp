@@ -11,6 +11,7 @@
 #include <Wire.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <regex>
 #include <string>
@@ -63,6 +64,8 @@ constexpr int WIFI_DELAY = 1000;
 constexpr int WIFI_TRIES = 15;
 constexpr int port = 38899;
 constexpr size_t EEPROM_SIZE = 512;
+constexpr int LIGHT_PIN = 2;
+volatile bool OTA_IN_PROGRESS = false;
 
 extern const char *TOPIC_ROOT;
 extern const char *TOPIC_SET;
@@ -76,7 +79,7 @@ ResetWiFi resetWiFi(RESET_BUTTON_GPO, RESET_PRESS_DURATION);
 OTAHelper *otaHelper = nullptr;
 PRINTHelper printHelper(secureClient);
 
-String CHIP_ID_STRING;
+String CHIP_ID;
 String WIFI_NAME;
 String EEPROM_MQTT_USERNAME;
 String EEPROM_MQTT_PASSWORD;
@@ -206,17 +209,32 @@ bool isNightTime() {
 
 #define WIFI_DEBUG
 
+String getMacString() {
+  uint64_t chipid = ESP.getEfuseMac();
+  char macStr[13];
+  snprintf(macStr, sizeof(macStr), "%02X%02X%02X%02X%02X%02X",
+           (uint8_t)(chipid), (uint8_t)(chipid >> 8), (uint8_t)(chipid >> 16),
+           (uint8_t)(chipid >> 24), (uint8_t)(chipid >> 32),
+           (uint8_t)(chipid >> 40));
+  String mac = String(macStr);
+  mac.toLowerCase();
+  return mac;
+}
+
 void setup() {
   delay(1000);
   Serial.begin(SERIAL_PORT);
   delay(100);
 
+  pinMode(LIGHT_PIN, OUTPUT);
+
   uint32_t dummy = esp_random();
   printHelper.log("DEBUG", "Hardware RNG initialized, first value: %u", dummy);
 
-  uint64_t chipId = ESP.getEfuseMac();
-  CHIP_ID_STRING = String(chipId, HEX);
-  WIFI_NAME = "Garge " + String(CHIP_ID_STRING);
+  CHIP_ID = getMacString();
+  WIFI_NAME = "Garge " + String(CHIP_ID);
+
+  printHelper.log("DEBUG", "Chip ID: %s", CHIP_ID);
 
   printHelper.log("DEBUG", "Disconnecting WiFi");
   WiFi.disconnect();
@@ -224,7 +242,7 @@ void setup() {
   EEPROMHelper_begin(EEPROM_SIZE);
   delay(10);
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LIGHT_PIN, OUTPUT);
   printHelper.log("DEBUG", "Starting...");
   printHelper.log("DEBUG", "Reading EEPROM...");
 
@@ -303,14 +321,14 @@ void setup() {
   printHelper.log("INFO", "%s %s started", OTA_PRODUCT_NAME.c_str(), VERSION);
 }
 
-void blinkLED(int count) {
+void blinkLED(int count, int LED_BLINK_DELAY) {
   static uint32_t lastToggleTime = 0;
   static int blinkCount = 0;
   static bool ledState = LOW;
 
   if (millis() - lastToggleTime >= LED_BLINK_DELAY) {
     ledState = !ledState;
-    digitalWrite(LED_BUILTIN, ledState);
+    digitalWrite(LIGHT_PIN, ledState);
 
     lastToggleTime = millis();
 
@@ -344,15 +362,27 @@ void discoverAndSubscribe() {
       std::string deviceMac = std::get<1>(device);
       std::string moduleName = std::get<2>(device);
 
-      if (isWizDevice(moduleName)) {
-        std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
-        publishDiscoveredDeviceConfig(CHIP_ID_STRING, deviceName.c_str(),
-                                      moduleName.c_str(), "Wiz");
+      // Extract only "SOCKET" or "SHRGBC" from moduleName
+      std::smatch match;
+      std::string moduleType;
+      if (std::regex_search(moduleName, match, std::regex("(SOCKET|SHRGBC)"))) {
+        moduleType = match.str();
+      } else {
+        moduleType = "unknown";
+      }
 
-        String setTopic = String(TOPIC_ROOT) +
-                          getGargeDeviceNameUnderscore(CHIP_ID_STRING) + "/" +
-                          deviceName.c_str() + TOPIC_SET;
+      if (isWizDevice(moduleType)) {
+        std::string deviceName = "wiz_" + moduleType + "_" + deviceMac;
+
+        publishDiscoveredDeviceConfig(deviceName.c_str(), moduleType.c_str(),
+                                      "Wiz");
+
+        publishGargeDiscoveryEvent(CHIP_ID, deviceName.c_str(),
+                                   moduleType.c_str());
+
+        String setTopic = String(TOPIC_ROOT) + deviceName.c_str() + TOPIC_SET;
         mqttClient->subscribe(setTopic.c_str());
+        printHelper.log("INFO", "Subscribed to %s", setTopic.c_str());
       }
     }
   }
@@ -392,6 +422,7 @@ void loop() {
 
   if (isAPMode) {
     server.handleClient();
+    blinkLED(LED_BLINK_COUNT, LED_BLINK_DELAY);
     // Restart after 30 minutes in AP mode
     static uint32_t apStartTime = 0;
     if (apStartTime == 0) {
@@ -402,6 +433,10 @@ void loop() {
       ESP.restart();
     }
     return;
+  }
+
+  if (!isAPMode) {
+    blinkLED(LED_BLINK_COUNT, 5000);
   }
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -481,14 +516,18 @@ void loop() {
   handleTelnet();
   server.handleClient();
   resetWiFi.update();
-  blinkLED(LED_BLINK_COUNT);
 
   mqttClient->loop();
 
   if (strcmp(GARGE_TYPE, "sensor") == 0) {
     readAndWriteEnvironmentalSensors(SENSOR_TYPE);
   } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
-    readAndWriteVoltageSensor();
+    if (!OTA_IN_PROGRESS) {
+      readAndWriteVoltageSensor();
+    } else {
+      printHelper.log(
+          "INFO", "OTA in progress, skipping voltage publish and deep sleep.");
+    }
     return;
   }
   discoverAndSubscribe();

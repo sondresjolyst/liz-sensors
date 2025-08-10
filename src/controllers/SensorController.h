@@ -20,7 +20,7 @@ extern DHT dht;
 extern Adafruit_BME280 bme;
 extern WiFiClientSecure *secureClient;
 extern PubSubClient *mqttClient;
-extern String CHIP_ID_STRING;
+extern String CHIP_ID;
 extern PRINTHelper printHelper;
 
 extern float BMEtempOffset;

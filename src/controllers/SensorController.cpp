@@ -64,9 +64,9 @@ void environmentalSensorSetup(const char *sensorType) {
 void checkAndRestartIfFailed(float *reading, int32_t *failedReadings) {
   printHelper.log("INFO", "Checking if reading failed");
   if (reading == nullptr || std::isnan(*reading)) {
-    printHelper.log("ERROR", "Reading: %s", String(*reading));
     (*failedReadings) += 1;
-    printHelper.log("ERROR", "Failed count: %s", String(*failedReadings));
+    printHelper.log("ERROR", "Reading: %s, Failed count: %s", String(*reading),
+                    String(*failedReadings));
     if (*failedReadings >= 10) {
       ESP.restart();
     }
@@ -109,35 +109,33 @@ void readAndWriteEnvironmentalSensors(const char *sensorType) {
     checkAndRestartIfFailed(&totalTemp, &failedTempReadings);
     checkAndRestartIfFailed(&currentHumidReadings, &failedHumidReadings);
 
-    printHelper.log("INFO", "tempReadings; %.2f °C",
-                    String(tempReadings[readIndex]));
-    printHelper.log("INFO", "humidReadings: %.2f %%",
-                    String(humidReadings[readIndex]));
-    printHelper.log("INFO", "totalTemp: %.2f °C", String(totalTemp));
-    printHelper.log("INFO", "totalHumid: %.2f %%", String(totalHumid));
+    printHelper.log("INFO", "tempReadings; %.2f °C, humidReadings: %.2f %%",
+        tempReadings[readIndex],
+        humidReadings[readIndex]);
+    printHelper.log("INFO", "totalTemp: %.2f °C, totalHumid: %.2f %%",
+        totalTemp, totalHumid);
 
     readIndex = (readIndex + 1) % arrayLength;
 
-    printHelper.log("INFO", "readIndex: %d", readIndex);
-    printHelper.log("INFO", "arrayLength: %d", arrayLength);
+    printHelper.log("INFO", "readIndex: %d, arrayLength: %d", readIndex,
+                    arrayLength);
 
     averageTemp = totalTemp / arrayLength;
     averageHumid = totalHumid / arrayLength;
 
     DynamicJsonDocument tempDoc(256);
     char tempBuffer[128];
-    tempDoc["temperature"] = averageTemp;
+    tempDoc["value"] = averageTemp;
     size_t tempN = serializeJson(tempDoc, tempBuffer);
-    publishGargeSensorState(CHIP_ID_STRING, "temperature", String(tempBuffer));
+    publishGargeSensorState(CHIP_ID, "temperature", String(tempBuffer));
 
     DynamicJsonDocument humidDoc(256);
     char humidBuffer[128];
-    humidDoc["humidity"] = averageHumid;
+    humidDoc["value"] = averageHumid;
     size_t humidN = serializeJson(humidDoc, humidBuffer);
-    publishGargeSensorState(CHIP_ID_STRING, "humidity", String(humidBuffer));
+    publishGargeSensorState(CHIP_ID, "humidity", String(humidBuffer));
 
-    printHelper.log("INFO", "Temperature: %.2f °C", averageTemp);
-
-    printHelper.log("INFO", "Humidity: %.2f %%", averageHumid);
+    printHelper.log("INFO", "Temperature: %.2f °C, Humidity: %.2f %%",
+                    averageTemp, averageHumid);
   }
 }

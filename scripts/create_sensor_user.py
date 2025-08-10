@@ -5,16 +5,16 @@ import re
 import os
 import secrets
 import hvac
-from utils import create_or_update_mqtt_user, set_mqtt_acl, hash_password, generate_salt
+from utils import create_or_update_mqtt_user, set_mqtt_acl, hash_password_pbkdf2, generate_salt
 
 garge_name = "garge"
 garge_environment = "dev"
 
-mqtt_database = f"{garge_name}-mqtt-{garge_environment}"
+mqtt_database = f"{garge_name}-{garge_environment}"
 
 database_host = "tumogroup.com"
-database_user_table = "mqtt_user"
-database_acl_table = "mqtt_acl"
+database_user_table = "EMQXMqttUsers"
+database_acl_table = "EMQXMqttAcls"
 database_port = 5432
 
 vault_address = "https://vault.tumogroup.com"
@@ -24,16 +24,12 @@ vault_secret_password_key = "password"
 vault_secret_username_key = "username"
 vault_github_token = None
 
-serial_port = 'COM4'
+serial_port = 'COM14'
 serial_speed = 9600
 
-sensor_acl = [
-    {"action": "all", "permission": "allow", "topic": "homeassistant/#", "qos": 0, "retain": 1},
-    {"action": "all", "permission": "allow", "topic": "home/#", "qos": 0, "retain": 1},
-    {"action": "all", "permission": "allow", "topic": "garge/#", "qos": 0, "retain": 1},
-]
-
 def main():
+    global vault_github_token
+
     pg_user = input("Enter PostgreSQL admin username: ")
     pg_password = getpass.getpass("Enter PostgreSQL admin password: ")
 
@@ -110,7 +106,12 @@ def main():
         exit(1)
 
     salt = generate_salt()
-    password_hash = hash_password(mqtt_password, salt)
+    password_hash = hash_password_pbkdf2(mqtt_password, salt)
+
+    sensor_acl = [
+    {"action": "all", "permission": "allow", "topic": f"garge/devices/{garge_name}_{mac}/#", "qos": 0, "retain": 1},
+    {"action": "all", "permission": "allow", "topic": f"garge/devices/{garge_name}_{mac}/#", "qos": 0, "retain": 0},
+]
 
     try:
         db_connection = psycopg2.connect(
@@ -124,8 +125,8 @@ def main():
             db_connection,
             database_user_table,
             sensor_name,
-            password_hash,
             salt,
+            password_hash,
             False
         )
 
@@ -156,7 +157,6 @@ def main():
             b64_user = base64.b64encode(sensor_name.encode('utf-8')).decode('ascii')
             b64_pass = base64.b64encode(mqtt_password.encode('utf-8')).decode('ascii')
             msg = f"SETMQTTCRED:{b64_user}:{b64_pass}\n"
-            print(f"Sending to ESP: {msg.strip()}")
             ser.write(msg.encode('utf-8'))
             ser.flush()
             try:

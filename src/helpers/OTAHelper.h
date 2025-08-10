@@ -6,6 +6,7 @@
 #include "PRINTHelper.h"
 
 extern PRINTHelper printHelper;
+extern volatile bool OTA_IN_PROGRESS;
 
 class OTAHelper {
  public:

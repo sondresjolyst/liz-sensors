@@ -69,12 +69,15 @@ int versionCompare(const char *v1, const char *v2) {
 void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
                                            const char *deviceName,
                                            const char *currentVersion) {
+  OTA_IN_PROGRESS = true;
+
   HTTPClient http;
   http.begin(manifestUrl);
   int httpCode = http.GET();
   if (httpCode != 200) {
     printHelper.log("ERROR", "Failed to fetch manifest: %d", httpCode);
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -85,6 +88,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   DeserializationError err = deserializeJson(doc, payload);
   if (err) {
     printHelper.log("ERROR", "Failed to parse manifest JSON");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -106,11 +110,13 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   if (!latest_version || !latest_bin_url) {
     printHelper.log("ERROR",
                     "No matching device or missing fields in manifest");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
   if (strcmp(latest_version, currentVersion) == 0) {
     printHelper.log("INFO", "Already up to date");
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -122,6 +128,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   if (binCode != 200) {
     printHelper.log("ERROR", "Failed to fetch bin: %d", binCode);
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -130,6 +137,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
   if (!canBegin) {
     printHelper.log("ERROR", "Not enough space for OTA");
     http.end();
+    OTA_IN_PROGRESS = false;
     return;
   }
 
@@ -141,6 +149,7 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
     ESP.restart();
   } else {
     printHelper.log("ERROR", "OTA Failed!");
+    OTA_IN_PROGRESS = false;
   }
   http.end();
 }

@@ -1,14 +1,14 @@
 import getpass
 import psycopg2
-from utils import create_or_update_mqtt_user, set_mqtt_acl, hash_password, generate_salt, ACLEntry
+from utils import create_or_update_mqtt_user, generate_salt, hash_password_pbkdf2, set_mqtt_acl, ACLEntry
 
 garge_name = "garge"
 garge_environment = "dev"
 
-mqtt_database = f"{garge_name}-mqtt-{garge_environment}"
+mqtt_database = f"{garge_name}-{garge_environment}"
 database_host = "tumogroup.com"
-database_user_table = "mqtt_user"
-database_acl_table = "mqtt_acl"
+database_user_table = "EMQXMqttUsers"
+database_acl_table = "EMQXMqttAcls"
 database_port = 5432
 
 def main():
@@ -20,10 +20,11 @@ def main():
     password = getpass.getpass("Enter password: ").strip()
 
     salt = generate_salt()
-    password_hash = hash_password(password, salt)
+    password_hash = hash_password_pbkdf2(password, salt)
 
     admin_acl: list[ACLEntry] = [
-        {"action": "all", "permission": "allow", "topic": "#", "qos": [0, 1, 2], "retain": 1}
+        {"action": "all", "permission": "allow", "topic": "#", "qos": [0, 1, 2], "retain": 1},
+        {"action": "all", "permission": "allow", "topic": "#", "qos": [0, 1, 2], "retain": 0}
     ]
 
     try:
@@ -38,8 +39,8 @@ def main():
             conn,
             database_user_table,
             username,
-            password_hash,
             salt,
+            password_hash,
             is_superuser=True
         )
         set_mqtt_acl(conn, database_acl_table, username, admin_acl)

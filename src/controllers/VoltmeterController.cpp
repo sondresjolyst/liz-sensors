@@ -75,6 +75,14 @@ void deepSleepForHour() {
 }
 
 void readAndWriteVoltageSensor() {
+  static uint32_t lastVoltageAttempt = 0;
+  const uint32_t voltageReadInterval = 5000;  // 5 seconds
+
+  if (millis() - lastVoltageAttempt < voltageReadInterval) {
+    return;
+  }
+  lastVoltageAttempt = millis();
+
   if (!bufferFilled) {
     voltageSensorSetup();
   }
@@ -92,13 +100,22 @@ void readAndWriteVoltageSensor() {
   DynamicJsonDocument doc(1024);
   char buffer[256];
 
-  doc["voltage"] = averageVoltage;
-
+  doc["value"] = averageVoltage;
   size_t n = serializeJson(doc, buffer);
 
-  publishGargeSensorState(CHIP_ID_STRING, "voltage", String(buffer));
+  bool publishSuccess =
+      publishGargeSensorState(CHIP_ID, "voltage", String(buffer));
 
   printHelper.log("INFO", "Battery Voltage: %.5f V", averageVoltage);
 
-  deepSleepForHour();
+  if (!mqttStatus()) {
+    printHelper.log("WARN", "MQTT not connected, skipping voltage publish.");
+    return;
+  }
+
+  if (publishSuccess) {
+    deepSleepForHour();
+  } else {
+    printHelper.log("WARN", "Publish failed, not entering deep sleep.");
+  }
 }

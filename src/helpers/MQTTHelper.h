@@ -15,7 +15,7 @@
 #include "../lib/liz/src/liz.h"
 #include "PRINTHelper.h"
 
-extern String CHIP_ID_STRING;
+extern String CHIP_ID;
 extern const char *MQTT_BROKER;
 extern String EEPROM_MQTT_USERNAME;
 extern String EEPROM_MQTT_PASSWORD;
@@ -32,14 +32,16 @@ String getGargeDeviceNameUnderscore(const String &mac);
 void publishGargeSensorConfig(const String &mac, const char *type,
                               const char *unit, const char *devClass,
                               const char *valueTemplate);
-void publishGargeSensorState(const String &mac, const char *type,
+bool publishGargeSensorState(const String &mac, const char *type,
                              const String &payload);
-void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
-                                   const char *model, const char *manufacturer);
+void publishDiscoveredDeviceConfig(const String &deviceName, const char *model,
+                                   const char *manufacturer);
 void publishDiscoveredDeviceState(const String &mac, const String &deviceName,
                                   const String &payload);
 void publishDiscoveredWizState(const String &mac, const String &deviceName,
                                bool lightState);
+void publishGargeDiscoveryEvent(const String &mac, const String &deviceName,
+                                const String &type);
 
 void mqttCallback(char *topic, byte *payload, unsigned int length);
 bool mqttStatus();

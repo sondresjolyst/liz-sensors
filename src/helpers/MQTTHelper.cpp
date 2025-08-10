@@ -1,12 +1,13 @@
 // Copyright (c) 2023-2025 Sondre Sjølyst
 
-#include <string>
-
 #include "MQTTHelper.h"
+#include <ArduinoJson.h>
+#include <regex>
+#include <string>
 
 extern void checkSerialForCredentials();
 
-const char *TOPIC_ROOT = "garge/sensors/";
+const char *TOPIC_ROOT = "garge/devices/";
 const char *SENSOR_TYPE_TEMPERATURE = "temperature";
 const char *SENSOR_TYPE_HUMIDITY = "humidity";
 const char *SENSOR_TYPE_VOLTAGE = "voltage";
@@ -31,18 +32,29 @@ String getSensorTopic(const String &mac, const char *type) {
          String(type);
 }
 
-String getDeviceTopic(const String &mac, const String &deviceName) {
-  return getBaseTopic(mac) + deviceName;
+String getSensorConfigTopic(const String &mac, const char *type) {
+  return getSensorTopic(mac, type) + TOPIC_CONFIG;
+}
+
+String getSensorStateTopic(const String &mac, const char *type) {
+  return getSensorTopic(mac, type) + TOPIC_STATE;
+}
+String getDiscoveryTopic(const String &mac, const String &targetDeviceId) {
+  return getBaseTopic(mac) + "discovered_devices/" + targetDeviceId +
+         "/discovered";
+}
+
+String getDeviceSetTopic(const String &targetDeviceId) {
+  return String(TOPIC_ROOT) + targetDeviceId + "/set";
 }
 
 void publishGargeSensorConfig(const String &mac, const char *type,
                               const char *unit, const char *devClass,
                               const char *valueTemplate) {
-  String sensorTopic = getSensorTopic(mac, type);
-  String configTopic = sensorTopic + TOPIC_CONFIG;
-  String stateTopic = sensorTopic + TOPIC_STATE;
+  String configTopic = getSensorConfigTopic(mac, type);
+  String stateTopic = getSensorStateTopic(mac, type);
 
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(512);
   char buffer[512];
 
   doc["name"] = getGargeDeviceNameSpace(mac) + " " + type;
@@ -53,28 +65,60 @@ void publishGargeSensorConfig(const String &mac, const char *type,
   doc["frc_upd"] = true;
   doc["uniq_id"] = getGargeDeviceNameUnderscore(mac) + "_" + type;
   doc["val_tpl"] = valueTemplate;
+  doc["parent_name"] = getGargeDeviceNameUnderscore(mac);
 
   size_t n = serializeJson(doc, buffer);
-  bool publish = mqttClient->publish(configTopic.c_str(), buffer, n);
+
+  bool publish = mqttClient->publish(configTopic.c_str(),
+                                     (const uint8_t *)buffer, n, true);
+
+  printHelper.log("DEBUG", "Publishing config for %s: %s", configTopic.c_str(),
+                  buffer);
   printHelper.log("INFO", "Publishing config for %s: %s", configTopic.c_str(),
                   publish ? "Success" : "Failed");
 }
 
-void publishGargeSensorState(const String &mac, const char *type,
+bool publishGargeSensorState(const String &mac, const char *type,
                              const String &payload) {
-  String stateTopic = getSensorTopic(mac, type) + TOPIC_STATE;
-  bool publish = mqttClient->publish(stateTopic.c_str(), payload.c_str());
+  String stateTopic = getSensorStateTopic(mac, type);
+  bool publish = mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+
+  printHelper.log("DEBUG", "Publishing state for %s: %s", stateTopic.c_str(),
+                  payload.c_str());
   printHelper.log("INFO", "Publishing state for %s: %s", stateTopic.c_str(),
                   publish ? "Success" : "Failed");
+  return publish;
 }
 
-void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
-                                   const char *model,
+void publishGargeDiscoveryEvent(const String &mac, const String &deviceName,
+                                const String &type) {
+  String discoveryTopic =
+      getBaseTopic(mac) + "discovered_devices/" + deviceName + "/discovered";
+
+  DynamicJsonDocument doc(256);
+  doc["DiscoveredBy"] = getGargeDeviceNameUnderscore(mac);
+  doc["Target"] = deviceName;
+  doc["Type"] = type;
+  char timeBuf[32];
+  time_t now = time(nullptr);
+  strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+  doc["Timestamp"] = timeBuf;
+
+  char buffer[256];
+  size_t n = serializeJson(doc, buffer);
+
+  bool publish = mqttClient->publish(discoveryTopic.c_str(),
+                                     (const uint8_t *)buffer, n, true);
+
+  printHelper.log("INFO", "Published discovery event to %s: %s",
+                  discoveryTopic.c_str(), publish ? "Success" : "Failed");
+}
+
+void publishDiscoveredDeviceConfig(const String &deviceName, const char *model,
                                    const char *manufacturer) {
-  String deviceTopic = getDeviceTopic(mac, deviceName);
-  String configTopic = deviceTopic + TOPIC_CONFIG;
-  String stateTopic = deviceTopic + TOPIC_STATE;
-  String setTopic = deviceTopic + TOPIC_SET;
+  String configTopic = String(TOPIC_ROOT) + deviceName + "/config";
+  String stateTopic = String(TOPIC_ROOT) + deviceName + "/state";
+  String setTopic = String(TOPIC_ROOT) + deviceName + "/set";
 
   DynamicJsonDocument doc(1024);
   char buffer[1024];
@@ -94,25 +138,22 @@ void publishDiscoveredDeviceConfig(const String &mac, const String &deviceName,
   doc["device"]["manufacturer"] = manufacturer;
 
   size_t n = serializeJson(doc, buffer, sizeof(buffer));
-  printHelper.log("INFO",
-                  "Sending discovery for: %s discoveryTopic: %s size: %u",
-                  deviceName.c_str(), configTopic.c_str(), (unsigned)n);
-  printHelper.log("DEBUG", "Payload size: %u", (unsigned)n);
-  printHelper.log("DEBUG", "message: %s", buffer);
 
-  bool publish = mqttClient->publish(configTopic.c_str(), buffer, n);
-  if (!publish) {
-    printHelper.log("ERROR", "Publish failed! MQTT state: %d",
-                    mqttClient->state());
-  }
-  printHelper.log("INFO", "Publishing discovery for %s: %s",
+  bool publish = mqttClient->publish(configTopic.c_str(),
+                                     (const uint8_t *)buffer, n, true);
+
+  printHelper.log("INFO", "Publishing discovered device config to %s: %s",
                   configTopic.c_str(), publish ? "Success" : "Failed");
 }
 
 void publishDiscoveredDeviceState(const String &mac, const String &deviceName,
                                   const String &payload) {
-  String stateTopic = getDeviceTopic(mac, deviceName) + TOPIC_STATE;
-  bool publish = mqttClient->publish(stateTopic.c_str(), payload.c_str());
+  String stateTopic = getBaseTopic(mac) + deviceName + TOPIC_STATE;
+
+  bool publish = mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+
+  printHelper.log("DEBUG", "Publishing state for %s: %s", stateTopic.c_str(),
+                  payload.c_str());
   printHelper.log("INFO", "Publishing state for %s: %s", stateTopic.c_str(),
                   publish ? "Success" : "Failed");
 }
@@ -129,23 +170,34 @@ void publishDiscoveredWizState(const String &mac, const String &deviceName,
 void mqttCallback(char *topic, byte *payload, unsigned int length) {
   printHelper.log("INFO", "Message arrived [%s]", topic);
 
-  printHelper.log("INFO", "Message arrived [%s]", topic);
-
   String payloadStr;
   for (unsigned int i = 0; i < length; i++) {
     payloadStr += static_cast<char>(payload[i]);
   }
   printHelper.log("DEBUG", "Payload: %s", payloadStr.c_str());
 
-  // Get the device MAC from the topic
   std::string topicStr(topic);
-  size_t lastUnderscore = topicStr.find_last_of("_");
-  size_t start = topicStr.find_last_of("_", lastUnderscore - 1) + 1;
-  size_t lastSlash = topicStr.find_last_of("/");
-  std::string deviceMac =
-      topicStr.substr(lastUnderscore + 1, lastSlash - lastUnderscore - 1);
-  std::string moduleName = topicStr.substr(start, lastUnderscore - start);
-  printHelper.log("DEBUG", "Topic: %s", topicStr.c_str());
+  size_t lastSlash = topicStr.rfind('/');
+  size_t secondLastSlash = topicStr.rfind('/', lastSlash - 1);
+  std::string deviceNamePart =
+      topicStr.substr(secondLastSlash + 1, lastSlash - secondLastSlash - 1);
+
+  // deviceMac is always the last characters after the last '_'
+  size_t lastUnderscore = deviceNamePart.rfind('_');
+  std::string deviceMac = deviceNamePart.substr(lastUnderscore + 1);
+
+  // Use regex to extract "SOCKET" or "SHRGBC" from deviceNamePart
+  std::smatch match;
+  std::string moduleType;
+  if (std::regex_search(deviceNamePart, match, std::regex("(SOCKET|SHRGBC)"))) {
+    moduleType = match.str();
+  } else {
+    moduleType = "unknown";
+  }
+
+  printHelper.log("DEBUG", "deviceNamePart: %s, deviceMac: %s, moduleType: %s",
+                  deviceNamePart.c_str(), deviceMac.c_str(),
+                  moduleType.c_str());
 
   // Find the device IP using the MAC address
   std::string deviceIP;
@@ -156,9 +208,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     }
   }
 
-  printHelper.log("DEBUG", "Device IP: %s", deviceIP.c_str());
-  printHelper.log("DEBUG", "Port: %d", port);
-  printHelper.log("DEBUG", "Payload: %s", payloadStr.c_str());
+  printHelper.log("DEBUG", "Device IP: %s, Port: %d, Payload: %s",
+                  deviceIP.c_str(), port, payloadStr.c_str());
 
   // If the payload is "on", turn on the light/switch
   if (payloadStr == "ON") {
@@ -178,17 +229,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     } else {
       bool state = doc["result"]["state"];
 
-      // Extract "SOCKET" or "SHRGBC"
-      std::smatch match;
-      if (std::regex_search(moduleName, match, std::regex("(SOCKET|SHRGBC)"))) {
-        moduleName = match.str();
-      }
+      std::string deviceName = "wiz_" + moduleType + "_" + deviceMac;
 
-      std::string deviceName = "wiz_" + moduleName + "_" + deviceMac;
-
-      printHelper.log("DEBUG", "MAC: %s", deviceMac.c_str());
-      printHelper.log("DEBUG", "State: %s", state ? "true" : "false");
-      publishDiscoveredWizState(deviceMac.c_str(), deviceName.c_str(), state);
+      printHelper.log("DEBUG",
+                      "Device Name: %s, Module Name: %s, MAC: %s, State: %s",
+                      deviceName.c_str(), moduleType.c_str(), deviceMac.c_str(),
+                      state ? "true" : "false");
+      publishDiscoveredWizState(CHIP_ID, deviceName.c_str(), state);
     }
   }
 }
@@ -232,21 +279,20 @@ void connectToMQTT() {
     }
 
     printHelper.log("DEBUG", "Calling mqttClient->connect()...");
-    if (mqttClient->connect(CHIP_ID_STRING.c_str(),
-                            EEPROM_MQTT_USERNAME.c_str(),
+    if (mqttClient->connect(CHIP_ID.c_str(), EEPROM_MQTT_USERNAME.c_str(),
                             EEPROM_MQTT_PASSWORD.c_str())) {
       printHelper.log("INFO", "MQTT connected");
 
       if (strcmp(GARGE_TYPE, "sensor") == 0) {
         publishGargeSensorConfig(
-            CHIP_ID_STRING.c_str(), "temperature", "°C", "temperature",
+            CHIP_ID.c_str(), "temperature", "°C", "temperature",
             "{{value_json.temperature | round(3) | default(0)}}");
         publishGargeSensorConfig(
-            CHIP_ID_STRING.c_str(), "humidity", "%", "humidity",
+            CHIP_ID.c_str(), "humidity", "%", "humidity",
             "{{value_json.humidity | round(3) | default(0)}}");
       } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
         publishGargeSensorConfig(
-            CHIP_ID_STRING.c_str(), "voltage", "V", "voltage",
+            CHIP_ID.c_str(), "voltage", "V", "voltage",
             "{{value_json.voltage | round(3) | default(0)}}");
       }
     } else {
