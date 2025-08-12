@@ -3,9 +3,13 @@ import psycopg2
 from utils import create_or_update_mqtt_user, generate_salt, hash_password_pbkdf2, set_mqtt_acl, ACLEntry
 
 garge_name = "garge"
-garge_environment = "dev"
+garge_environment = "prod"
 
-mqtt_database = f"{garge_name}-{garge_environment}"
+if garge_environment == "prod":
+    mqtt_database = f"{garge_name}"
+else:
+    mqtt_database = f"{garge_name}-{garge_environment}"
+
 database_host = "tumogroup.com"
 database_user_table = "EMQXMqttUsers"
 database_acl_table = "EMQXMqttAcls"

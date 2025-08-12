@@ -8,9 +8,12 @@ import hvac
 from utils import create_or_update_mqtt_user, set_mqtt_acl, hash_password_pbkdf2, generate_salt
 
 garge_name = "garge"
-garge_environment = "dev"
+garge_environment = "prod"
 
-mqtt_database = f"{garge_name}-{garge_environment}"
+if garge_environment == "prod":
+    mqtt_database = f"{garge_name}"
+else:
+    mqtt_database = f"{garge_name}-{garge_environment}"
 
 database_host = "tumogroup.com"
 database_user_table = "EMQXMqttUsers"
@@ -24,7 +27,7 @@ vault_secret_password_key = "password"
 vault_secret_username_key = "username"
 vault_github_token = None
 
-serial_port = 'COM14'
+serial_port = 'COM25'
 serial_speed = 9600
 
 def main():
