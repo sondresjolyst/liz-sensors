@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.2.0...v1.3.0) (2025-08-13)
+
+
+### Features
+
+* add version to device config ([#56](https://github.com/sondresjolyst/liz-sensors/issues/56)) ([14301ad](https://github.com/sondresjolyst/liz-sensors/commit/14301adae4cc17f43589c1b63b3cc30c704711f9))
+
 ## [1.2.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.1.0...v1.2.0) (2025-08-10)
 
 
