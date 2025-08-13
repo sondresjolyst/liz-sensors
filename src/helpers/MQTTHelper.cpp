@@ -66,6 +66,7 @@ void publishGargeSensorConfig(const String &mac, const char *type,
   doc["uniq_id"] = getGargeDeviceNameUnderscore(mac) + "_" + type;
   doc["val_tpl"] = valueTemplate;
   doc["parent_name"] = getGargeDeviceNameUnderscore(mac);
+  doc["version"] = VERSION;
 
   size_t n = serializeJson(doc, buffer);
 
