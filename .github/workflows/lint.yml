@@ -16,7 +16,7 @@ permissions: {}
 jobs:
   lint-codebase:
     name: Lint codebase
-    uses: equinor/ops-actions/.github/workflows/super-linter.yml@ac9f7829eb5d96f7a4995c846153848d4837b53f
+    uses: equinor/ops-actions/.github/workflows/super-linter.yml@b69b1fceb1c03e01ca3ee5771f477442521331f0
     permissions:
       contents: read
       statuses: write
