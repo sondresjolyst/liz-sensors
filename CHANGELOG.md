@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.3.0...v1.4.0) (2025-10-03)
+
+
+### Features
+
+* new certificate ([#63](https://github.com/sondresjolyst/liz-sensors/issues/63)) ([fe1fde8](https://github.com/sondresjolyst/liz-sensors/commit/fe1fde8dff6fd46de420668f38b3cd3ef2e3e124))
+
 ## [1.3.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.2.0...v1.3.0) (2025-08-13)
 
 
