@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/sondresjolyst/liz-sensors/compare/v1.4.0...v1.4.1) (2025-11-13)
+
+
+### Bug Fixes
+
+* use setInsecure instead of hardcoded certs ([#73](https://github.com/sondresjolyst/liz-sensors/issues/73)) ([eca2898](https://github.com/sondresjolyst/liz-sensors/commit/eca2898102e823d8b41ab646bec532b14e88948e))
+
 ## [1.4.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.3.0...v1.4.0) (2025-10-03)
 
 
