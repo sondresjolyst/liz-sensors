@@ -192,8 +192,15 @@ String getMacString() {
 void setupSecureClient() {
   if (secureClient) {
     delete secureClient;
+    secureClient = nullptr;
   }
+
   secureClient = new WiFiClientSecure();
+  if (!secureClient) {
+    printHelper.log("ERROR", "Failed to allocate WiFiClientSecure");
+    return;
+  }
+
   secureClient->setInsecure();
   secureClient->setHandshakeTimeout(30);
 }
@@ -219,7 +226,6 @@ void setup() {
   EEPROMHelper_begin(EEPROM_SIZE);
   delay(10);
 
-  pinMode(LIGHT_PIN, OUTPUT);
   printHelper.log("DEBUG", "Starting...");
   printHelper.log("DEBUG", "Reading EEPROM...");
 
@@ -393,17 +399,23 @@ void checkSerialForCredentials() {
 }
 
 void loop() {
+  static uint32_t apStartTime = 0;
+  static uint32_t lastMqttAttempt = 0;
+  static uint32_t lastOtaCheck = 0;
+
+  const uint32_t mqttReconnectDelay = 5000;                // 5 seconds
+  const uint32_t otaCheckInterval = 60UL * 60UL * 1000UL;  // 1 hour
+  const uint32_t apTimeout = 30UL * 60UL * 1000UL;         // 30 minutes
+
   checkSerialForCredentials();
 
   if (isAPMode) {
     server.handleClient();
     blinkLED(LED_BLINK_COUNT, LED_BLINK_DELAY);
-    // Restart after 30 minutes in AP mode
-    static uint32_t apStartTime = 0;
     if (apStartTime == 0) {
       apStartTime = millis();
     }
-    if (millis() - apStartTime > 30UL * 60UL * 1000UL) {  // 30 minutes
+    if (millis() - apStartTime > apTimeout) {
       printHelper.log("DEBUG", "Restarting after 30 minutes in AP mode");
       ESP.restart();
     }
@@ -415,7 +427,7 @@ void loop() {
   }
 
   if (WiFi.status() != WL_CONNECTED) {
-    static int16_t lastAttempt = 0;
+    static uint32_t lastAttempt = 0;
     if (millis() - lastAttempt > 5000) {
       printHelper.log("DEBUG", "WiFi lost, attempting reconnect...");
       String EEPROM_SSID = readEEPROM(EEPROM_SSID_START, EEPROM_SSID_END);
@@ -432,8 +444,6 @@ void loop() {
   }
 
   if ((mqttStatus() == false)) {
-    static uint32_t lastMqttAttempt = 0;
-    const uint32_t mqttReconnectDelay = 5000;  // 5 seconds
     auto isValid = [](const String &s) {
       if (s.length() == 0)
         return false;
@@ -443,6 +453,7 @@ void loop() {
       }
       return false;
     };
+
     if (isValid(EEPROM_MQTT_USERNAME) && isValid(EEPROM_MQTT_PASSWORD)) {
       if (millis() - lastMqttAttempt > mqttReconnectDelay) {
         uint32_t freeHeap = ESP.getFreeHeap();
@@ -471,9 +482,6 @@ void loop() {
     otaHelper->loop();
   }
 
-  static int64_t lastOtaCheck = 0;
-  const int64_t otaCheckInterval = 60UL * 60UL * 1000UL;  // 1 hour
-
   if (millis() - lastOtaCheck > otaCheckInterval) {
     lastOtaCheck = millis();
     if (isNightTime()) {
@@ -486,7 +494,6 @@ void loop() {
   handleTelnet();
   server.handleClient();
   resetWiFi.update();
-
   mqttClient->loop();
 
   if (strcmp(GARGE_TYPE, "sensor") == 0) {
