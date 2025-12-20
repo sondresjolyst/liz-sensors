@@ -272,7 +272,7 @@ void setup() {
     if (strcmp(GARGE_TYPE, "sensor") == 0) {
       environmentalSensorSetup(SENSOR_TYPE);
     } else if (strcmp(GARGE_TYPE, "voltmeter") == 0) {
-      voltageSensorSetup();
+      voltageSensorSetup(CHIP_ID);
     } else {
       printHelper.log("ERROR", "Please set GARGE_TYPE");
     }
