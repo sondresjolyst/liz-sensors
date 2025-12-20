@@ -46,7 +46,7 @@ void voltageSensorSetup(const String &mac) {
   pinMode(ANALOG_IN_PIN, INPUT);
 
   String deviceName = getGargeDeviceNameUnderscore(mac);
-  for (const auto& cal : CALIBRATIONS) {
+  for (const auto &cal : CALIBRATIONS) {
     if (deviceName == cal.deviceName) {
       a = cal.a;
       b = cal.b;

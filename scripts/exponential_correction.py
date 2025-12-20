@@ -5,7 +5,7 @@ current_b = 1.02092
 
 # new measurements with current calibration
 measured_voltages = [5.31395, 12.12718391]  # Measured voltages from the sensor
-actual_voltages = [5.03, 12.67]          # Actual battery voltage
+actual_voltages = [5.03, 12.67]  # Actual battery voltage
 
 # Reverse the current calibration to get raw sensor readings
 raw_voltages = []
@@ -17,7 +17,7 @@ for measured in measured_voltages:
 
 print("Raw sensor readings (before calibration):")
 for i, raw in enumerate(raw_voltages):
-    print(f"  Point {i+1}: {raw:.5f}V")
+    print(f"  Point {i + 1}: {raw:.5f}V")
 print()
 
 # calculate new a and b using raw sensor readings
@@ -35,6 +35,8 @@ print()
 # Verify with raw readings
 print("Verification:")
 for raw, actual in zip(raw_voltages, actual_voltages):
-    corrected = a * (raw ** b)
+    corrected = a * (raw**b)
     error = abs(corrected - actual)
-    print(f"Raw: {raw:.5f}V → Corrected: {corrected:.5f}V (Actual: {actual}V, Error: {error:.5f}V)")
+    print(
+        f"Raw: {raw:.5f}V → Corrected: {corrected:.5f}V (Actual: {actual}V, Error: {error:.5f}V)"
+    )

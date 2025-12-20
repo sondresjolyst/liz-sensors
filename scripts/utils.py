@@ -3,6 +3,7 @@ from typing import List, Literal, TypedDict, Union
 import hashlib
 import os
 
+
 class ACLEntry(TypedDict):
     action: Literal["publish", "subscribe", "all"]
     permission: Literal["allow", "deny"]
@@ -10,13 +11,14 @@ class ACLEntry(TypedDict):
     qos: Union[int, List[int]]
     retain: int
 
+
 def create_or_update_mqtt_user(
     db_connection: connection,
     user_table: str,
     username: str,
     salt: str,
     password_hash: str,
-    is_superuser: bool = False
+    is_superuser: bool = False,
 ) -> None:
     cur = db_connection.cursor()
     cur.execute(
@@ -28,15 +30,16 @@ def create_or_update_mqtt_user(
             "PasswordHash" = EXCLUDED."PasswordHash",
             "IsSuperuser" = EXCLUDED."IsSuperuser";
         """,
-        (username, salt, password_hash, is_superuser)
+        (username, salt, password_hash, is_superuser),
     )
     cur.close()
+
 
 def set_mqtt_acl(
     db_connection: connection,
     acl_table: str,
     username: str,
-    acl_entries: List[ACLEntry]
+    acl_entries: List[ACLEntry],
 ) -> None:
     if not acl_entries:
         raise ValueError("acl_entries must be provided and not empty.")
@@ -48,38 +51,52 @@ def set_mqtt_acl(
         if isinstance(qos_values, list):
             for qos in qos_values:
                 values.append("(%s, %s, %s, %s, %s, %s)")
-                params.extend([
+                params.extend(
+                    [
+                        username,
+                        entry["action"],
+                        entry["permission"],
+                        entry["topic"],
+                        qos,
+                        entry["retain"],
+                    ]
+                )
+        else:
+            values.append("(%s, %s, %s, %s, %s, %s)")
+            params.extend(
+                [
                     username,
                     entry["action"],
                     entry["permission"],
                     entry["topic"],
-                    qos,
-                    entry["retain"]
-                ])
-        else:
-            values.append("(%s, %s, %s, %s, %s, %s)")
-            params.extend([
-                username,
-                entry["action"],
-                entry["permission"],
-                entry["topic"],
-                qos_values,
-                entry["retain"]
-            ])
+                    qos_values,
+                    entry["retain"],
+                ]
+            )
     if values:
         cur.execute(
             f"""
             INSERT INTO "{acl_table}" ("Username", "Action", "Permission", "Topic", "Qos", "Retain")
-            VALUES {', '.join(values)}
+            VALUES {", ".join(values)}
             ON CONFLICT DO NOTHING;
             """,
-            tuple(params)
+            tuple(params),
         )
     cur.close()
+
 
 def generate_salt(length=16):
     return os.urandom(length).hex()
 
-def hash_password_pbkdf2(password: str, salt: str, iterations: int = 300000, hash_byte_size: int = 32) -> str:
-    dk = hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), salt.encode('utf-8'), iterations, dklen=hash_byte_size)
+
+def hash_password_pbkdf2(
+    password: str, salt: str, iterations: int = 300000, hash_byte_size: int = 32
+) -> str:
+    dk = hashlib.pbkdf2_hmac(
+        "sha512",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        iterations,
+        dklen=hash_byte_size,
+    )
     return dk.hex()
