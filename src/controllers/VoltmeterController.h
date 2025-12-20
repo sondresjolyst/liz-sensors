@@ -40,8 +40,30 @@ const float CORRECTION_FACTOR = 1.218;  // multimeter voltage / voltageMeasured
 // Solve for a:
 // a = exp(ln(5.03) - b * ln(5.31395))
 // a ≈ 0.91406
-const float a = 0.91406;
-const float b = 1.02092;
+
+struct CalibrationData {
+  const char *deviceName;
+  float a;
+  float b;
+};
+
+const CalibrationData CALIBRATIONS[] = {
+    {"garge_b43a4536a89c", 0.69120, 1.15116},
+    {"garge_b43a4536a8dc", 0.56430, 1.23212},
+    {"garge_b43a4536a6c4", 0.72965, 1.11976},
+    {"garge_b43a4536a838", 0.70084, 1.14312},
+    {"garge_b43a4536a83c", 0.67883, 1.16164},
+    {"garge_b43a4536a888", 0.68457, 1.15675},
+    {"garge_b43a4536a9ec", 0.69857, 1.14501},
+    {"garge_b43a4536a8ac", 0.73949, 1.11200},
+    {"garge_b43a4536a8d4", 0.66882, 1.17025},
+    {"garge_b43a4536a804", 0.66128, 1.17683},
+    {"garge_b43a4536a864", 0.67546, 1.16452},
+    {"garge_b43a4536a880", 0.70094, 1.14305},
+};
+
+extern float a;
+extern float b;
 
 const int READ_VOLTAGE_DELAY = 60000;
 const int READING_VOLTAGE_BUFFER = 5;
@@ -50,8 +72,7 @@ const int READING_VOLTAGE_BUFFER = 5;
 constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US =
     3600ULL * 1000000ULL;  // 1 hour
 
-// constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US =
-//     60000000ULL;  // 1 min
+// constexpr uint64_t VOLTMETER_SLEEP_INTERVAL_US = 30000000ULL;  // 30 seconds
 
 extern float averageVoltage;
 extern float voltageReadings[READING_VOLTAGE_BUFFER];
@@ -62,7 +83,7 @@ extern float currentVoltageReadings;
 extern int32_t failedVoltageReadings;
 
 float readVoltage();
-void voltageSensorSetup();
+void voltageSensorSetup(const String &mac);
 void voltageCheckAndRestartIfFailed(float *reading, int32_t *failedReadings);
 void readAndWriteVoltageSensor();
 

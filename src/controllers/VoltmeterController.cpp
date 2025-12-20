@@ -14,6 +14,10 @@ RTC_DATA_ATTR bool bufferFilled = false;
 float currentVoltageReadings = 0;
 RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
 
+// Default calibration values
+float a = 0.91406;
+float b = 1.02092;
+
 float readVoltage() {
   int sensorValue = analogRead(ANALOG_IN_PIN);
   printHelper.log("INFO", "Sensor Value value: %d", sensorValue);
@@ -38,8 +42,18 @@ float readVoltage() {
   return vinTestCorrectedExponential;
 }
 
-void voltageSensorSetup() {
+void voltageSensorSetup(const String &mac) {
   pinMode(ANALOG_IN_PIN, INPUT);
+
+  String deviceName = getGargeDeviceNameUnderscore(mac);
+  for (const auto &cal : CALIBRATIONS) {
+    if (deviceName == cal.deviceName) {
+      a = cal.a;
+      b = cal.b;
+      printHelper.log("INFO", "Loaded calibration for %s", deviceName.c_str());
+      break;
+    }
+  }
 
   if (!bufferFilled) {
     totalVoltage = 0;
@@ -84,7 +98,7 @@ void readAndWriteVoltageSensor() {
   lastVoltageAttempt = millis();
 
   if (!bufferFilled) {
-    voltageSensorSetup();
+    voltageSensorSetup(CHIP_ID);
   }
   int arrayLength = sizeof(voltageReadings) / sizeof(voltageReadings[0]);
 
