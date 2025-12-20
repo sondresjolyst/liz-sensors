@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.4.1...v1.5.0) (2025-12-20)
+
+
+### Features
+
+* calibration map ([#81](https://github.com/sondresjolyst/liz-sensors/issues/81)) ([df4a48c](https://github.com/sondresjolyst/liz-sensors/commit/df4a48c933ae2092bea5afb8abc87a33f1e68b08))
+
+
+### Bug Fixes
+
+* **deps:** bump equinor/ops-actions/.github/workflows/super-linter.yml ([#79](https://github.com/sondresjolyst/liz-sensors/issues/79)) ([cc34354](https://github.com/sondresjolyst/liz-sensors/commit/cc3435425cd67b0cb4c92dd674cbe0b49f2b6d00))
+* **deps:** bump urllib3 in the pip group across 1 directory ([#78](https://github.com/sondresjolyst/liz-sensors/issues/78)) ([e638800](https://github.com/sondresjolyst/liz-sensors/commit/e6388003978dcc4efc79dbf1dbc0c85cbbcd5d82))
+
 ## [1.4.1](https://github.com/sondresjolyst/liz-sensors/compare/v1.4.0...v1.4.1) (2025-11-13)
 
 
