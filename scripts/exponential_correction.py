@@ -1,4 +1,5 @@
 """Calculate exponential calibration constants for voltage sensor readings."""
+
 import math
 
 CURRENT_A = 0.91406
@@ -28,7 +29,7 @@ x2, y2 = raw_voltages[1], actual_voltages[1]
 b = (math.log(y2) - math.log(y1)) / (math.log(x2) - math.log(x1))
 a = math.exp(math.log(y1) - b * math.log(x1))
 
-print("New calibration constants:")
+print(f"New calibration constants:")
 print(f"const float a = {a:.5f};")
 print(f"const float b = {b:.5f};")
 print()
