@@ -114,8 +114,15 @@ void OTAHelper::checkAndUpdateFromManifest(const char *manifestUrl,
     return;
   }
 
-  if (strcmp(latest_version, currentVersion) == 0) {
-    printHelper.log("INFO", "Already up to date");
+  int comparison = versionCompare(latest_version, currentVersion);
+
+  if (comparison <= 0) {
+    if (comparison == 0) {
+      printHelper.log("INFO", "Already up to date");
+    } else {
+      printHelper.log("INFO", "Current version %s is newer than latest %s",
+                      currentVersion, latest_version);
+    }
     OTA_IN_PROGRESS = false;
     return;
   }
