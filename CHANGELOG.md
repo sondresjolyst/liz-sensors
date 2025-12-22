@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/sondresjolyst/liz-sensors/compare/v1.5.0...v1.5.1) (2025-12-22)
+
+
+### Bug Fixes
+
+* improve calibrations ([#83](https://github.com/sondresjolyst/liz-sensors/issues/83)) ([ee0340b](https://github.com/sondresjolyst/liz-sensors/commit/ee0340b4e3679d6a005b14cbeab7d4aa2e712ceb))
+* sleep after x failed mqtt attempts ([#82](https://github.com/sondresjolyst/liz-sensors/issues/82)) ([7f26599](https://github.com/sondresjolyst/liz-sensors/commit/7f26599512b25ab95ca16f5e3848ec636396ea45))
+
 ## [1.5.0](https://github.com/sondresjolyst/liz-sensors/compare/v1.4.1...v1.5.0) (2025-12-20)
 
 
