@@ -13,6 +13,7 @@ RTC_DATA_ATTR bool bufferFilled = false;
 
 float currentVoltageReadings = 0;
 RTC_DATA_ATTR int32_t failedVoltageReadings = 0;
+RTC_DATA_ATTR int32_t failedPublishAttempts = 0;
 
 // Default calibration values
 float a = 0.91406;
@@ -111,6 +112,22 @@ void readAndWriteVoltageSensor() {
   readVoltageIndex = (readVoltageIndex + 1) % arrayLength;
   averageVoltage = totalVoltage / arrayLength;
 
+  printHelper.log("INFO", "Battery Voltage: %.5f V", averageVoltage);
+
+  if (!mqttStatus() || failedPublishAttempts >= 5) {
+    failedPublishAttempts++;
+    if (failedPublishAttempts >= 5) {
+      printHelper.log("WARN", "MQTT issue (Max attempts reached), sleeping.",
+                      failedPublishAttempts);
+      failedPublishAttempts = 0;
+      deepSleepForHour();
+    } else {
+      printHelper.log("WARN", "MQTT issue (attempt %d/5).",
+                      failedPublishAttempts);
+    }
+    return;
+  }
+
   DynamicJsonDocument doc(1024);
   char buffer[256];
 
@@ -120,16 +137,12 @@ void readAndWriteVoltageSensor() {
   bool publishSuccess =
       publishGargeSensorState(CHIP_ID, "voltage", String(buffer));
 
-  printHelper.log("INFO", "Battery Voltage: %.5f V", averageVoltage);
-
-  if (!mqttStatus()) {
-    printHelper.log("WARN", "MQTT not connected, skipping voltage publish.");
-    return;
-  }
-
   if (publishSuccess) {
+    failedPublishAttempts = 0;
     deepSleepForHour();
   } else {
-    printHelper.log("WARN", "Publish failed, not entering deep sleep.");
+    failedPublishAttempts++;
+    printHelper.log("WARN", "Publish failed (attempt %d/5).",
+                    failedPublishAttempts);
   }
 }
