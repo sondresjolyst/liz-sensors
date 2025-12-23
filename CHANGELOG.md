@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2](https://github.com/sondresjolyst/liz-sensors/compare/v1.5.1...v1.5.2) (2025-12-23)
+
+
+### Bug Fixes
+
+* calibrations and mqtt message not sending before sleeping ([#87](https://github.com/sondresjolyst/liz-sensors/issues/87)) ([2bdc21f](https://github.com/sondresjolyst/liz-sensors/commit/2bdc21f4c97f1e8029da07ce406155f0ffc78a67))
+* higher unreleased versions would downgrade to latest version in manifest ([#85](https://github.com/sondresjolyst/liz-sensors/issues/85)) ([5147fc7](https://github.com/sondresjolyst/liz-sensors/commit/5147fc7ed9422cd9f76fa8d9bc027b034312231a))
+
 ## [1.5.1](https://github.com/sondresjolyst/liz-sensors/compare/v1.5.0...v1.5.1) (2025-12-22)
 
 
