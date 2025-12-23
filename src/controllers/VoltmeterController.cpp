@@ -139,6 +139,8 @@ void readAndWriteVoltageSensor() {
 
   if (publishSuccess) {
     failedPublishAttempts = 0;
+    mqttClient->loop();
+    delay(500);
     deepSleepForHour();
   } else {
     failedPublishAttempts++;

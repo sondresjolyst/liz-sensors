@@ -63,6 +63,8 @@ const CalibrationData CALIBRATIONS[] = {
     {"garge_b43a4536a834", 0.74890, 1.10466},
     {"garge_b43a4536aa3c", 0.72839, 1.12076},
     {"garge_b43a4536a858", 0.77635, 1.08378},
+    {"garge_48ca43597f68", 0.74799, 1.10536},
+    {"garge_48ca43597f90", 0.74093, 1.11086},
 };
 
 extern float a;
